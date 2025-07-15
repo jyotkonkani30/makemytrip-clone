@@ -1,0 +1,1442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Flights</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="js/user-trips.js"></script>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    
+    #map-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #map-modal.show {
+      display: flex;
+    }
+
+    #map-container {
+      width: 90%;
+      max-width: 800px;
+      height: 500px;
+      background: white;
+      border-radius: 10px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    #map {
+      width: 100%;
+      height: 100%;
+    }
+
+    .close-map {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: rgba(0, 0, 0, 0.7);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      font-size: 1.2rem;
+    }
+
+    .close-map:hover {
+      background: rgba(0, 0, 0, 0.9);
+    }
+  </style>
+</head>
+<body>
+  <!-- Back to Home Button -->
+  <a href="new.html" class="back-home-btn">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M19 12H5"></path>
+      <path d="M12 19l-7-7 7-7"></path>
+    </svg>
+    <span>Home</span>
+  </a>
+  
+  <!-- Simplified Header -->
+  <header class="flights-header">
+    <h1 class="flight-title">Popular Flights</h1>
+  </header>
+
+  <!-- Banner Section - Simplified -->
+  <section class="banner simplified-banner">
+    <div class="banner-content">
+      <h1>Find Great Flight Deals</h1>
+    </div>
+  </section>
+
+  <!-- Flight Results Section -->
+  <section class="destinations">
+    <div class="filter-sort-container">
+      <h2>Featured Flights</h2>
+      <div class="flight-filters">
+        <div class="filter">
+          <label>Price Range</label>
+          <select id="price-filter">
+            <option value="all">All Prices</option>
+            <option value="budget">Budget (Under ₹5,000)</option>
+            <option value="moderate">Moderate (₹5,000 - ₹10,000)</option>
+            <option value="luxury">Premium (Above ₹10,000)</option>
+          </select>
+        </div>
+        <div class="filter">
+          <label>Airlines</label>
+          <select id="airline-filter">
+            <option value="all">All Airlines</option>
+            <option value="Air India">Air India</option>
+            <option value="IndiGo">IndiGo</option>
+            <option value="Vistara">Vistara</option>
+            <option value="SpiceJet">SpiceJet</option>
+          </select>
+        </div>
+        <div class="filter">
+          <label>Sort By</label>
+          <select id="sort-option">
+            <option value="price-low">Price: Low to High</option>
+            <option value="price-high">Price: High to Low</option>
+            <option value="duration">Duration</option>
+            <option value="departure">Departure Time</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    
+    <div id="flights-list">
+      <!-- Flight results will be displayed here -->
+    </div>
+  </section>
+
+  <!-- Map Modal -->
+  <div id="map-modal">
+    <div id="map-container">
+      <button class="close-map" onclick="closeMap()">×</button>
+      <div id="map"></div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    © 2025 All Rights Reserved.
+  </footer>
+
+  <script>
+    let map, routeLayer;
+
+    function initializeMap() {
+      // Destroy the map instance if it already exists
+      if (map) {
+        map.remove();
+        map = null;
+      }
+
+      // Create a new map instance
+      map = L.map('map').setView([20, 0], 2); // Default view
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+      }).addTo(map);
+
+      // Create a new layer group for the route
+      routeLayer = L.layerGroup().addTo(map);
+    }
+
+    function showFlightRoute(fromCoords, toCoords) {
+      // Reinitialize the map to ensure a fresh state
+      initializeMap();
+
+      // Add markers for departure and arrival
+      const fromMarker = L.marker(fromCoords).addTo(routeLayer);
+      const toMarker = L.marker(toCoords).addTo(routeLayer);
+
+      // Draw the route
+      const route = L.polyline([fromCoords, toCoords], {
+        color: 'blue',
+        weight: 4,
+        opacity: 0.7,
+        smoothFactor: 1
+      }).addTo(routeLayer);
+
+      // Fit map bounds to the route
+      map.fitBounds(route.getBounds());
+
+      // Open the modal
+      document.getElementById('map-modal').classList.add('show');
+    }
+
+    function closeMap() {
+      document.getElementById('map-modal').classList.remove('show');
+    }
+
+    function handleSeeRoutes(fromCoords, toCoords) {
+      showFlightRoute(fromCoords, toCoords);
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      // Check if user is logged in
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        // Optional: You could redirect to login or show a message
+        console.log('User not logged in');
+      }
+
+      // Setup filters
+      const priceFilter = document.getElementById('price-filter');
+      const airlineFilter = document.getElementById('airline-filter');
+      const sortOption = document.getElementById('sort-option');
+      
+      if (priceFilter && airlineFilter && sortOption) {
+        [priceFilter, airlineFilter, sortOption].forEach(filter => {
+          filter.addEventListener('change', function() {
+            displayFlights('Delhi', 'Mumbai', '2023-12-20');
+          });
+        });
+      }
+      
+      // Display flights on page load
+      displayFlights('Delhi', 'Mumbai', '2023-12-20');
+      
+      // Display booked flights on page load
+      displayBookedFlights();
+    });
+    
+    function displayFlights(from, to, date) {
+      const flightsList = document.getElementById('flights-list');
+      
+      // Mock flight data
+      const mockFlights = [
+        { 
+          airline: 'Air India', 
+          flightNumber: 'AI302', 
+          departureTime: '06:00', 
+          arrivalTime: '08:30', 
+          duration: '2h 30m',
+          price: 12500,
+          originalPrice: 14000,
+          discount: 10,
+          stops: 0,
+          aircraft: 'Airbus A320',
+          amenities: ['Meals', 'Entertainment', 'USB Power'],
+          rating: 4.2,
+          reviews: 856,
+          fromCoords: [28.5562, 77.1000], // Delhi Airport
+          toCoords: [19.0896, 72.8656], // Mumbai Airport
+          from: from,
+          to: to
+        },
+        { 
+          airline: 'IndiGo', 
+          flightNumber: '6E301', 
+          departureTime: '08:15', 
+          arrivalTime: '10:45', 
+          duration: '2h 30m',
+          price: 9800,
+          originalPrice: 11500,
+          discount: 15,
+          stops: 0,
+          aircraft: 'Airbus A321',
+          amenities: ['Snacks for Purchase', 'Extra Legroom (Paid)'],
+          rating: 4.0,
+          reviews: 1243,
+          fromCoords: [28.5562, 77.1000], // Delhi Airport
+          toCoords: [19.0896, 72.8656], // Mumbai Airport
+          from: from,
+          to: to
+        },
+        { 
+          airline: 'Vistara', 
+          flightNumber: 'UK835', 
+          departureTime: '12:30', 
+          arrivalTime: '15:00', 
+          duration: '2h 30m',
+          price: 13200,
+          originalPrice: 15000,
+          discount: 12,
+          stops: 0,
+          aircraft: 'Boeing 737',
+          amenities: ['Premium Meals', 'Entertainment', 'Wi-Fi', 'USB Power'],
+          rating: 4.5,
+          reviews: 967,
+          fromCoords: [28.5562, 77.1000], // Delhi Airport
+          toCoords: [19.0896, 72.8656], // Mumbai Airport
+          from: from,
+          to: to
+        },
+        { 
+          airline: 'SpiceJet', 
+          flightNumber: 'SG128', 
+          departureTime: '16:45', 
+          arrivalTime: '19:15', 
+          duration: '2h 30m',
+          price: 8900,
+          originalPrice: 10500,
+          discount: 15,
+          stops: 0,
+          aircraft: 'Boeing 737-800',
+          amenities: ['Snacks for Purchase'],
+          rating: 3.8,
+          reviews: 723,
+          fromCoords: [28.5562, 77.1000], // Delhi Airport
+          toCoords: [19.0896, 72.8656], // Mumbai Airport
+          from: from,
+          to: to
+        },
+        { 
+          airline: 'Air India', 
+          flightNumber: 'AI421', 
+          departureTime: '10:30', 
+          arrivalTime: '14:15', 
+          duration: '3h 45m',
+          price: 10200,
+          originalPrice: 12000,
+          discount: 15,
+          stops: 1,
+          stopLocation: 'Mumbai',
+          aircraft: 'Airbus A320',
+          amenities: ['Meals', 'Entertainment', 'USB Power'],
+          rating: 4.1,
+          reviews: 689,
+          fromCoords: [28.5562, 77.1000], // Delhi Airport
+          toCoords: [19.0896, 72.8656], // Mumbai Airport
+          from: from,
+          to: to
+        }
+      ];
+      
+      // Apply filters
+      let filteredFlights = mockFlights;
+      
+      // Price filter
+      const priceFilter = document.getElementById('price-filter').value;
+      if (priceFilter !== 'all') {
+        if (priceFilter === 'budget') {
+          filteredFlights = filteredFlights.filter(flight => flight.price < 5000);
+        } else if (priceFilter === 'moderate') {
+          filteredFlights = filteredFlights.filter(flight => flight.price >= 5000 && flight.price <= 10000);
+        } else if (priceFilter === 'luxury') {
+          filteredFlights = filteredFlights.filter(flight => flight.price > 10000);
+        }
+      }
+      
+      // Airline filter
+      const airlineFilter = document.getElementById('airline-filter').value;
+      if (airlineFilter !== 'all') {
+        filteredFlights = filteredFlights.filter(flight => flight.airline === airlineFilter);
+      }
+      
+      // Apply sorting
+      const sortOption = document.getElementById('sort-option').value;
+      if (sortOption === 'price-low') {
+        filteredFlights.sort((a, b) => a.price - b.price);
+      } else if (sortOption === 'price-high') {
+        filteredFlights.sort((a, b) => b.price - a.price);
+      } else if (sortOption === 'departure') {
+        filteredFlights.sort((a, b) => a.departureTime.localeCompare(b.departureTime));
+      } else if (sortOption === 'duration') {
+        filteredFlights.sort((a, b) => {
+          const durationA = parseInt(a.duration.split('h')[0]) * 60 + parseInt(a.duration.split('h')[1].replace('m', '').trim());
+          const durationB = parseInt(b.duration.split('h')[0]) * 60 + parseInt(b.duration.split('h')[1].replace('m', '').trim());
+          return durationA - durationB;
+        });
+      }
+      
+      // Clear loading message
+      flightsList.innerHTML = '';
+      
+      // Show flight details
+      flightsList.innerHTML += `<h3>Available Flights from ${from} to ${to} on ${date}</h3>`;
+      
+      // Display number of results
+      const resultsCount = document.createElement('p');
+      resultsCount.className = 'results-count';
+      resultsCount.textContent = `${filteredFlights.length} flights found`;
+      flightsList.appendChild(resultsCount);
+      
+      // Display each flight with card design similar to hotel cards but without images
+      filteredFlights.forEach(flight => {
+        // Check if flight is already booked by comparing with user-specific bookings
+        const userFlights = UserTrips.getTrips('flights');
+        const isBooked = userFlights.some(
+          bookedFlight => bookedFlight.flightNumber === flight.flightNumber &&
+          bookedFlight.departureTime === flight.departureTime &&
+          bookedFlight.from === flight.from &&
+          bookedFlight.to === flight.to
+        );
+        
+        const flightCard = document.createElement('div');
+        flightCard.className = 'flight-card';
+        
+        // Create rating stars
+        const ratingStars = Array(5).fill(0).map((_, i) => 
+          i < Math.floor(flight.rating) ? '★' : '☆'
+        ).join('');
+        
+        // Create amenities list
+        const amenitiesList = flight.amenities.map(item => `<span class="amenity">${item}</span>`).join('');
+        
+        // Determine stop information
+        const stopInfo = flight.stops === 0 ? 
+          '<span class="non-stop">Non-stop</span>' : 
+          `<span class="stops">${flight.stops} Stop(s) - ${flight.stopLocation}</span>`;
+        
+        flightCard.innerHTML = `
+          <div class="flight-details">
+            <div class="flight-info">
+              <div class="flight-header">
+                <h3>${flight.airline} - ${flight.flightNumber}</h3>
+                <div class="flight-rating">
+                  <div class="stars">${ratingStars}</div>
+                  <div class="review-score">${flight.rating}/5 (${flight.reviews} reviews)</div>
+                </div>
+              </div>
+              
+              <div class="time-details">
+                <div class="departure">
+                  <h4>${flight.departureTime}</h4>
+                  <p>${flight.from}</p>
+                </div>
+                <div class="duration">
+                  <p>${flight.duration}</p>
+                  <div class="flight-line"></div>
+                  <p>${stopInfo}</p>
+                </div>
+                <div class="arrival">
+                  <h4>${flight.arrivalTime}</h4>
+                  <p>${flight.to}</p>
+                </div>
+              </div>
+              
+              <div class="flight-amenities">
+                ${amenitiesList}
+              </div>
+            </div>
+            <div class="flight-price">
+              <div class="price">
+                <h3>₹${flight.price}</h3>
+                ${flight.originalPrice ? `<span class="original-price">₹${flight.originalPrice}</span>` : ''}
+                <p>per person</p>
+              </div>
+              <button class="book-btn ${isBooked ? 'booked' : ''}" 
+                      ${isBooked ? 'disabled' : 'onclick="openBookingModal(\'' + flight.airline + '\', \'' + flight.flightNumber + '\', \'' + flight.from + '\', \'' + flight.to + '\', \'' + flight.departureTime + '\', \'' + flight.arrivalTime + '\', ' + flight.price + ')"'}>
+                ${isBooked ? 'Already Booked' : 'Book Now'}
+              </button>
+              <button class="see-routes-btn" onclick="handleSeeRoutes(${JSON.stringify(flight.fromCoords)}, ${JSON.stringify(flight.toCoords)})">See Routes</button>
+            </div>
+          </div>
+        `;
+        
+        flightsList.appendChild(flightCard);
+      });
+      
+      // Show message if no flights found
+      if (filteredFlights.length === 0) {
+        const noFlights = document.createElement('div');
+        noFlights.className = 'no-flights';
+        noFlights.innerHTML = `
+          <img src="images/no-results.svg" alt="No flights found" />
+          <h4>No flights found</h4>
+          <p>Try adjusting your filters or changing your travel dates.</p>
+        `;
+        flightsList.appendChild(noFlights);
+      }
+    }
+    
+    function displayBookedFlights() {
+      // Get user-specific booked flights
+      const userFlights = UserTrips.getTrips('flights');
+      
+      // Check if there are any booked flights
+      if (!userFlights || userFlights.length === 0) {
+        return;
+      }
+      
+      // Create booked flights section if it doesn't exist
+      let bookedFlightsSection = document.getElementById('booked-flights-section');
+      if (!bookedFlightsSection) {
+        bookedFlightsSection = document.createElement('section');
+        bookedFlightsSection.id = 'booked-flights-section';
+        bookedFlightsSection.className = 'destinations booked-flights';
+        document.querySelector('.destinations').after(bookedFlightsSection);
+      }
+      
+      // Clear existing content
+      bookedFlightsSection.innerHTML = '';
+      
+      // Create header for booked flights
+      const header = document.createElement('h2');
+      header.textContent = 'Your Booked Flights';
+      bookedFlightsSection.appendChild(header);
+      
+      // Display count
+      const bookedCount = document.createElement('p');
+      bookedCount.className = 'results-count';
+      bookedCount.textContent = `${userFlights.length} booked flights`;
+      bookedFlightsSection.appendChild(bookedCount);
+      
+      // Create container for booked flights
+      const bookedFlightsList = document.createElement('div');
+      bookedFlightsList.id = 'booked-flights-list';
+      bookedFlightsSection.appendChild(bookedFlightsList);
+      
+      // Display each booked flight
+      userFlights.forEach(flight => {
+        const flightCard = document.createElement('div');
+        flightCard.className = 'flight-card booked-flight-card';
+        
+        flightCard.innerHTML = `
+          <div class="flight-details">
+            <div class="flight-info">
+              <div class="flight-header">
+                <h3>${flight.airline} - ${flight.flightNumber}</h3>
+                <div class="booking-id">Booking ID: ${flight.bookingId}</div>
+              </div>
+              
+              <div class="time-details">
+                <div class="departure">
+                  <h4>${flight.departureTime}</h4>
+                  <p>${flight.from}</p>
+                </div>
+                <div class="duration">
+                  <p>${flight.duration || 'Direct'}</p>
+                  <div class="flight-line"></div>
+                  <p><span class="booked-tag">Booked</span></p>
+                </div>
+                <div class="arrival">
+                  <h4>${flight.arrivalTime}</h4>
+                  <p>${flight.to}</p>
+                </div>
+              </div>
+              
+              <div class="passenger-info">
+                <p><strong>Passengers:</strong> ${flight.adults} Adults${flight.children > 0 ? ', ' + flight.children + ' Children' : ''}${flight.infants > 0 ? ', ' + flight.infants + ' Infants' : ''}</p>
+              </div>
+            </div>
+            <div class="flight-price">
+              <div class="price">
+                <h3>₹${flight.totalPrice}</h3>
+                <p>total price</p>
+              </div>
+              <div class="booking-date">${formatDate(flight.bookingDate)}</div>
+            </div>
+          </div>
+        `;
+        
+        bookedFlightsList.appendChild(flightCard);
+      });
+    }
+    
+    function formatDate(dateString) {
+      const options = { year: 'numeric', month: 'short', day: 'numeric' };
+      return new Date(dateString).toLocaleDateString('en-US', options);
+    }
+    
+    function openBookingModal(airline, flightNumber, from, to, departureTime, arrivalTime, price) {
+      // Create booking modal if it doesn't exist
+      if (!document.getElementById('booking-modal')) {
+        const modal = document.createElement('div');
+        modal.id = 'booking-modal';
+        modal.className = 'booking-modal';
+        
+        modal.innerHTML = `
+          <div class="booking-modal-content">
+            <span class="close-booking-modal" onclick="closeBookingModal()">&times;</span>
+            <h2>Complete Your Booking</h2>
+            <div class="booking-flight-info">
+              <div>
+                <h3 id="booking-flight-name"></h3>
+                <div id="booking-flight-route"></div>
+              </div>
+            </div>
+            
+            <div class="booking-form">
+              <div class="booking-info-section">
+                <h4>Passenger Information</h4>
+                <div class="booking-row">
+                  <label>Number of Adults:</label>
+                  <div class="booking-counter">
+                    <button type="button" onclick="updatePassengerCount('adults', -1)">-</button>
+                    <span id="booking-adults-count">1</span>
+                    <button type="button" onclick="updatePassengerCount('adults', 1)">+</button>
+                  </div>
+                </div>
+                
+                <div class="booking-row">
+                  <label>Number of Children:</label>
+                  <div class="booking-counter">
+                    <button type="button" onclick="updatePassengerCount('children', -1)">-</button>
+                    <span id="booking-children-count">0</span>
+                    <button type="button" onclick="updatePassengerCount('children', 1)">+</button>
+                  </div>
+                </div>
+                
+                <div class="booking-row">
+                  <label>Number of Infants:</label>
+                  <div class="booking-counter">
+                    <button type="button" onclick="updatePassengerCount('infants', -1)">-</button>
+                    <span id="booking-infants-count">0</span>
+                    <button type="button" onclick="updatePassengerCount('infants', 1)">+</button>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="booking-price-details">
+                <div class="price-row">
+                  <span>Base Price:</span>
+                  <span>₹<span id="booking-base-price"></span>/person</span>
+                </div>
+                <div class="price-row">
+                  <span>Adults (<span id="price-adults-count">1</span>):</span>
+                  <span>₹<span id="adult-total-price"></span></span>
+                </div>
+                <div class="price-row" id="children-price-row" style="display: none;">
+                  <span>Children (<span id="price-children-count">0</span>):</span>
+                  <span>₹<span id="children-total-price"></span></span>
+                </div>
+                <div class="price-row" id="infants-price-row" style="display: none;">
+                  <span>Infants (<span id="price-infants-count">0</span>):</span>
+                  <span>₹<span id="infants-total-price"></span></span>
+                </div>
+                <div class="price-row">
+                  <span>Taxes & Fees (18%):</span>
+                  <span>₹<span id="booking-taxes"></span></span>
+                </div>
+                <div class="price-row total">
+                  <span>Total Price:</span>
+                  <span>₹<span id="booking-total-price"></span></span>
+                </div>
+              </div>
+              
+              <div class="booking-actions">
+                <button class="cancel-btn" onclick="closeBookingModal()">Cancel</button>
+                <button class="confirm-book-btn" onclick="confirmBooking()">Confirm Booking</button>
+              </div>
+            </div>
+          </div>
+        `;
+        
+        document.body.appendChild(modal);
+      }
+      
+      // Set booking modal data
+      const modal = document.getElementById('booking-modal');
+      document.getElementById('booking-flight-name').textContent = `${airline} - ${flightNumber}`;
+      document.getElementById('booking-flight-route').textContent = `${from} to ${to} (${departureTime} - ${arrivalTime})`;
+      document.getElementById('booking-base-price').textContent = price;
+      
+      // Store flight details as data attributes
+      modal.setAttribute('data-airline', airline);
+      modal.setAttribute('data-flight-number', flightNumber);
+      modal.setAttribute('data-from', from);
+      modal.setAttribute('data-to', to);
+      modal.setAttribute('data-departure-time', departureTime);
+      modal.setAttribute('data-arrival-time', arrivalTime);
+      modal.setAttribute('data-price', price);
+      
+      // Reset passenger counts
+      document.getElementById('booking-adults-count').textContent = 1;
+      document.getElementById('booking-children-count').textContent = 0;
+      document.getElementById('booking-infants-count').textContent = 0;
+      
+      // Update price calculation
+      updateTotalPrice(price, 1, 0, 0);
+      
+      // Show the modal
+      modal.style.display = 'flex';
+      setTimeout(() => {
+        modal.classList.add('show');
+      }, 10);
+    }
+    
+    function updatePassengerCount(type, change) {
+      const countElement = document.getElementById(`booking-${type}-count`);
+      let count = parseInt(countElement.textContent);
+      
+      count += change;
+      
+      // Set limits based on type
+      if (type === 'adults') {
+        count = Math.max(1, Math.min(count, 9)); // At least 1, at most 9
+      } else if (type === 'children') {
+        count = Math.max(0, Math.min(count, 8)); // At least 0, at most 8
+      } else if (type === 'infants') {
+        const adultsCount = parseInt(document.getElementById('booking-adults-count').textContent);
+        count = Math.max(0, Math.min(count, adultsCount)); // At least 0, at most equal to adults
+      }
+      
+      countElement.textContent = count;
+      
+      // Update price calculation
+      const modal = document.getElementById('booking-modal');
+      const basePrice = parseInt(modal.getAttribute('data-price'));
+      const adultsCount = parseInt(document.getElementById('booking-adults-count').textContent);
+      const childrenCount = parseInt(document.getElementById('booking-children-count').textContent);
+      const infantsCount = parseInt(document.getElementById('booking-infants-count').textContent);
+      
+      updateTotalPrice(basePrice, adultsCount, childrenCount, infantsCount);
+    }
+    
+    function updateTotalPrice(basePrice, adults, children, infants) {
+      // Update counts in price breakdown
+      document.getElementById('price-adults-count').textContent = adults;
+      document.getElementById('price-children-count').textContent = children;
+      document.getElementById('price-infants-count').textContent = infants;
+      
+      // Calculate totals
+      const adultTotal = basePrice * adults;
+      const childrenTotal = Math.round(basePrice * 0.7) * children; // 70% of adult fare
+      const infantsTotal = Math.round(basePrice * 0.2) * infants; // 20% of adult fare
+      
+      // Update price breakdown
+      document.getElementById('adult-total-price').textContent = adultTotal;
+      document.getElementById('children-total-price').textContent = childrenTotal;
+      document.getElementById('infants-total-price').textContent = infantsTotal;
+      
+      // Show/hide children and infant rows
+      document.getElementById('children-price-row').style.display = children > 0 ? 'flex' : 'none';
+      document.getElementById('infants-price-row').style.display = infants > 0 ? 'flex' : 'none';
+      
+      // Calculate subtotal and taxes
+      const subtotal = adultTotal + childrenTotal + infantsTotal;
+      const taxes = Math.round(subtotal * 0.18); // 18% tax
+      const totalPrice = subtotal + taxes;
+      
+      // Update tax and total
+      document.getElementById('booking-taxes').textContent = taxes;
+      document.getElementById('booking-total-price').textContent = totalPrice;
+    }
+    
+    function closeBookingModal() {
+      const modal = document.getElementById('booking-modal');
+      if (modal) {
+        modal.classList.remove('show');
+        setTimeout(() => {
+          modal.style.display = 'none';
+        }, 300);
+      }
+    }
+    
+    function confirmBooking() {
+      // Check if user is logged in
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        alert('You need to be logged in to book a flight');
+        window.location.href = 'new.html';
+        return;
+      }
+      
+      const modal = document.getElementById('booking-modal');
+      
+      // Get flight details from modal
+      const airline = modal.getAttribute('data-airline');
+      const flightNumber = modal.getAttribute('data-flight-number');
+      const from = modal.getAttribute('data-from');
+      const to = modal.getAttribute('data-to');
+      const departureTime = modal.getAttribute('data-departure-time');
+      const arrivalTime = modal.getAttribute('data-arrival-time');
+      const basePrice = parseInt(modal.getAttribute('data-price'));
+      
+      // Get passenger counts
+      const adults = parseInt(document.getElementById('booking-adults-count').textContent);
+      const children = parseInt(document.getElementById('booking-children-count').textContent);
+      const infants = parseInt(document.getElementById('booking-infants-count').textContent);
+      
+      // Get total price
+      const totalPrice = document.getElementById('booking-total-price').textContent;
+      
+      // Close the modal
+      closeBookingModal();
+      
+      // Create booking object
+      const booking = {
+        airline,
+        flightNumber,
+        from,
+        to,
+        departureTime,
+        arrivalTime,
+        basePrice,
+        adults,
+        children,
+        infants,
+        totalPrice,
+        bookingDate: new Date().toISOString()
+      };
+      
+      // Save using user-specific storage
+      const saved = UserTrips.saveTrip('flights', booking);
+      
+      if (saved) {
+        // Show confirmation message
+        showBookingConfirmation();
+        
+        // Refresh both flight lists
+        displayFlights('Delhi', 'Mumbai', '2023-12-20');
+        displayBookedFlights();
+      } else {
+        alert('There was a problem saving your booking. Please try again.');
+      }
+    }
+    
+    function generateBookingId() {
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      const numbers = '0123456789';
+      let bookingId = '';
+      
+      // Add 3 random letters
+      for (let i = 0; i < 3; i++) {
+        bookingId += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      
+      // Add a dash
+      bookingId += '-';
+      
+      // Add 4 random numbers
+      for (let i = 0; i < 4; i++) {
+        bookingId += numbers.charAt(Math.floor(Math.random() * numbers.length));
+      }
+      
+      return bookingId;
+    }
+    
+    function showBookingConfirmation() {
+      // Create confirmation alert if it doesn't exist
+      if (!document.getElementById('booking-confirmation')) {
+        const confirmationAlert = document.createElement('div');
+        confirmationAlert.id = 'booking-confirmation';
+        confirmationAlert.className = 'booking-confirmation';
+        
+        confirmationAlert.innerHTML = `
+          <div class="confirmation-content">
+            <div class="success-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+              </svg>
+            </div>
+            <h3>Booking Confirmed!</h3>
+          </div>
+        `;
+        
+        document.body.appendChild(confirmationAlert);
+      }
+      
+      // Show the confirmation
+      const confirmation = document.getElementById('booking-confirmation');
+      confirmation.style.display = 'flex';
+      
+      // Add the show class after a small delay to trigger animation
+      setTimeout(() => {
+        confirmation.classList.add('show');
+      }, 10);
+      
+      // Hide the confirmation after 3 seconds
+      setTimeout(() => {
+        confirmation.classList.remove('show');
+        setTimeout(() => {
+          confirmation.style.display = 'none';
+        }, 500);
+      }, 3000);
+    }
+    
+    // Handle background image change
+    window.onload = function() {
+      const banner = document.querySelector('.banner');
+      banner.style.backgroundImage = 'url("https://images.unsplash.com/photo-1506012787146-f92b2d7d6d96?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1920")';
+      banner.style.backgroundSize = 'cover';
+      banner.style.backgroundPosition = 'center';
+    };
+  </script>
+
+  <style>
+    /* Back to Home Button */
+    .back-home-btn {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.9);
+      color: var(--primary);
+      padding: 10px 18px;
+      border-radius: var(--radius-full);
+      box-shadow: var(--shadow-md);
+      z-index: var(--z-top);
+      transition: all var(--transition-normal);
+      font-weight: 500;
+      font-size: 15px;
+    }
+    
+    .back-home-btn:hover {
+      background: var(--primary);
+      color: white;
+      transform: translateX(-5px);
+      box-shadow: var(--shadow-lg);
+    }
+    
+    .back-home-btn svg {
+      width: 16px;
+      height: 16px;
+    }
+    
+    /* Flight-specific styles matching hotel card format */
+    .flight-card {
+      background: white;
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow-md);
+      transition: all var(--transition-normal);
+      display: flex;
+      flex-direction: row;
+    }
+    
+    .flight-card:hover {
+      transform: translateY(-5px);
+      box-shadow: var(--shadow-lg);
+    }
+    
+    .flight-details {
+      padding: 20px;
+      display: flex;
+      flex: 1;
+      justify-content: space-between;
+    }
+    
+    .flight-info {
+      flex: 1;
+    }
+    
+    .flight-header {
+      margin-bottom: 15px;
+    }
+    
+    .flight-info h3 {
+      margin-bottom: 5px;
+      color: var(--text-dark);
+    }
+    
+    .flight-rating {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    
+    .stars {
+      color: gold;
+      letter-spacing: 2px;
+    }
+    
+    .review-score {
+      font-size: 0.9rem;
+      color: var(--text-medium);
+    }
+    
+    .time-details {
+      display: flex;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    
+    .departure, .arrival {
+      text-align: center;
+    }
+    
+    .departure h4, .arrival h4 {
+      margin-bottom: 5px;
+      color: var(--text-dark);
+    }
+    
+    .departure p, .arrival p {
+      margin: 0;
+      color: var(--text-medium);
+      font-size: 0.9rem;
+    }
+    
+    .duration {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 0 15px;
+    }
+    
+    .flight-line {
+      width: 100%;
+      height: 2px;
+      background: var(--text-light);
+      position: relative;
+      margin: 8px 0;
+    }
+    
+    .flight-line:before, .flight-line:after {
+      content: "";
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--text-light);
+      top: -3px;
+    }
+    
+    .flight-line:before {
+      left: 0;
+    }
+    
+    .flight-line:after {
+      right: 0;
+    }
+    
+    .non-stop {
+      color: var(--primary);
+      font-weight: 500;
+    }
+    
+    .stops {
+      color: var(--text-medium);
+    }
+    
+    .flight-amenities {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+    
+    .amenity {
+      font-size: 0.8em;
+      color: var(--text-medium);
+      background: var(--off-white);
+      padding: 4px 8px;
+      border-radius: 4px;
+    }
+    
+    .flight-price {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      justify-content: space-between;
+      min-width: 150px;
+    }
+    
+    .price {
+      text-align: right;
+    }
+    
+    .price h3 {
+      margin-bottom: 0;
+      color: var(--primary);
+    }
+    
+    .original-price {
+      text-decoration: line-through;
+      color: var(--text-light);
+      font-size: 0.9rem;
+    }
+    
+    .price p {
+      margin: 0;
+      font-size: 0.8rem;
+      color: var(--text-light);
+    }
+    
+    /* Make book button consistent with hotel styling */
+    .book-btn {
+      background: linear-gradient(45deg, var(--primary-dark), var(--primary));
+      color: white;
+      border: none;
+      padding: 8px 15px;
+      border-radius: var(--radius-md);
+      font-weight: 500;
+      box-shadow: var(--shadow-sm);
+    }
+    
+    .book-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+    
+    .book-btn.booked {
+      background: var(--text-light);
+      color: var(--text-medium);
+      cursor: not-allowed;
+    }
+    
+    .see-routes-btn {
+      background: var(--secondary);
+      color: white;
+      border: none;
+      padding: 8px 15px;
+      border-radius: var(--radius-md);
+      font-weight: 500;
+      box-shadow: var(--shadow-sm);
+      margin-top: 10px;
+    }
+    
+    .see-routes-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+    
+    @media (max-width: 768px) {
+      .flight-card {
+        flex-direction: column;
+      }
+      
+      .flight-details {
+        flex-direction: column;
+      }
+      
+      .flight-price {
+        align-items: flex-start;
+        margin-top: 15px;
+      }
+      
+      .time-details {
+        flex-direction: column;
+        gap: 15px;
+      }
+      
+      .flight-line {
+        width: 80%;
+      }
+    }
+    
+    /* Add new simplified banner style */
+    .simplified-banner {
+      height: 40vh;
+      min-height: 300px;
+    }
+
+    /* Enhanced Filter Styling - matching hotels page */
+    .filter-sort-container {
+      background: rgba(255, 255, 255, 0.8);
+      border-radius: var(--radius-lg);
+      padding: 15px 20px;
+      box-shadow: var(--shadow-md);
+      margin-bottom: 30px;
+      border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    
+    .filter-sort-container h2 {
+      margin-bottom: 15px;
+      font-size: 1.5rem;
+      color: var(--text-dark);
+      position: relative;
+      display: inline-block;
+    }
+    
+    .filter-sort-container h2::after {
+      content: '';
+      position: absolute;
+      bottom: -5px;
+      left: 0;
+      width: 40%;
+      height: 2px;
+      background: linear-gradient(90deg, var(--primary), transparent);
+      border-radius: var(--radius-full);
+    }
+    
+    .flight-filters {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      align-items: flex-end;
+    }
+    
+    .filter {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-width: 180px;
+      flex-grow: 1;
+    }
+    
+    .filter label {
+      font-size: 0.85rem;
+      color: var(--text-medium);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    /* Custom Select Styling */
+    .filter select {
+      padding: 10px 35px 10px 15px;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      background: white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%234a5568' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") no-repeat right 10px center;
+      background-size: 16px;
+      color: var(--text-dark);
+      font-size: 0.95rem;
+      appearance: none;
+      cursor: pointer;
+      transition: all var(--transition-normal);
+      box-shadow: var(--shadow-sm);
+    }
+    
+    .filter select:hover {
+      border-color: var(--primary-light);
+      box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1);
+    }
+    
+    .filter select:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.2);
+    }
+    
+    /* Filter option style - applied to all select elements */
+    .filter select option {
+      padding: 10px;
+      font-size: 0.95rem;
+    }
+    
+    /* Special styling for each filter type */
+    #price-filter {
+      border-left: 3px solid var(--primary);
+    }
+    
+    #airline-filter {
+      border-left: 3px solid var(--secondary);
+    }
+    
+    #sort-option {
+      border-left: 3px solid #a7ffd6; /* var(--accent) */
+    }
+    
+    /* Results count styling */
+    .results-count {
+      background: rgba(255, 255, 255, 0.7);
+      padding: 8px 15px;
+      border-radius: var(--radius-full);
+      color: var(--text-medium);
+      font-size: 0.9rem;
+      font-weight: 500;
+      display: inline-block;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow-sm);
+    }
+    
+    /* No results styling */
+    .no-flights {
+      text-align: center;
+      padding: 40px;
+      background: white;
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-md);
+    }
+    
+    .no-flights img {
+      max-width: 100px;
+      margin-bottom: 20px;
+    }
+    
+    .no-flights h4 {
+      margin-bottom: 10px;
+      color: var(--text-dark);
+    }
+    
+    .no-flights p {
+      color: var(--text-medium);
+    }
+    
+    /* Booking Modal Styles */
+    .booking-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      justify-content: center;
+      align-items: center;
+      z-index: var(--z-top);
+      transition: opacity var(--transition-normal);
+    }
+    
+    .booking-modal.show {
+      display: flex;
+      opacity: 1;
+    }
+    
+    .booking-modal-content {
+      background: white;
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      width: 90%;
+      max-width: 600px;
+      box-shadow: var(--shadow-lg);
+      position: relative;
+    }
+    
+    .close-booking-modal {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: var(--text-medium);
+    }
+    
+    .booking-flight-info {
+      margin-bottom: 20px;
+    }
+    
+    .booking-flight-info h3 {
+      margin-bottom: 5px;
+      color: var(--text-dark);
+    }
+    
+    .booking-flight-info div {
+      color: var(--text-medium);
+      font-size: 0.9rem;
+    }
+    
+    .booking-form {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    
+    .booking-info-section {
+      background: var(--off-white);
+      padding: 15px;
+      border-radius: var(--radius-md);
+    }
+    
+    .booking-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    
+    .booking-counter {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .booking-counter button {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+    }
+    
+    .booking-counter button:hover {
+      background: var(--primary-dark);
+    }
+    
+    .booking-price-details {
+      background: var(--off-white);
+      padding: 15px;
+      border-radius: var(--radius-md);
+    }
+    
+    .price-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    
+    .price-row.total {
+      font-weight: 600;
+      color: var(--primary);
+    }
+    
+    .booking-actions {
+      display: flex;
+      justify-content: space-between;
+    }
+    
+    .cancel-btn, .confirm-book-btn {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+    }
+    
+    .cancel-btn:hover {
+      background: var(--primary-dark);
+    }
+    
+    .confirm-book-btn:hover {
+      background: var(--secondary);
+    }
+    
+    /* Booking Confirmation Styles */
+    .booking-confirmation {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      justify-content: center;
+      align-items: center;
+      z-index: var(--z-top);
+      transition: opacity var(--transition-normal);
+    }
+    
+    .booking-confirmation.show {
+      display: flex;
+      opacity: 1;
+    }
+    
+    .confirmation-content {
+      background: white;
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      width: 90%;
+      max-width: 400px;
+      box-shadow: var(--shadow-lg);
+      text-align: center;
+    }
+    
+    .success-icon {
+      margin-bottom: 10px;
+    }
+    
+    .success-icon svg {
+      width: 50px;
+      height: 50px;
+      color: var(--primary);
+    }
+    
+    .confirmation-content h3 {
+      color: var(--text-dark);
+    }
+  </style>
+</body>
+</html>

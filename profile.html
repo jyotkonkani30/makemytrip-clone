@@ -1,0 +1,40 @@
+<!-- Add this section to the existing profile page -->
+<div class="settings-section">
+  <h3>Data Management</h3>
+  <p>If you made bookings before our system update, you can migrate your old bookings to the new system.</p>
+  <button id="migrate-data-btn" class="action-btn">Migrate My Bookings</button>
+  <p id="migration-status"></p>
+</div>
+
+<script>
+  document.getElementById('migrate-data-btn').addEventListener('click', function() {
+    // Display loading status
+    const statusElem = document.getElementById('migration-status');
+    statusElem.textContent = 'Migrating your bookings...';
+    
+    // Run migration
+    setTimeout(() => {
+      try {
+        const result = migrateUserData();
+        
+        if (result.success) {
+          let message = 'Migration successful! ';
+          Object.keys(result.migrations).forEach(key => {
+            const m = result.migrations[key];
+            if (m.status === 'success') {
+              message += `${key}: ${m.migrated}/${m.total} migrated. `;
+            }
+          });
+          statusElem.textContent = message;
+          statusElem.style.color = 'green';
+        } else {
+          statusElem.textContent = 'There was an error during migration. Please try again.';
+          statusElem.style.color = 'red';
+        }
+      } catch (error) {
+        statusElem.textContent = 'Migration failed: ' + error.message;
+        statusElem.style.color = 'red';
+      }
+    }, 500);
+  });
+</script>

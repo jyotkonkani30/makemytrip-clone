@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MakeMyTrip Clone Home - Enhanced</title>
+ 
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+
+
+  <style>
+    .auth-buttons span {
+      margin-right: 10px;
+      color: var(--text-dark);
+      font-weight: 500;
+    }
+    
+    .auth-buttons button {
+      background: linear-gradient(45deg, var(--primary-dark), var(--primary), var(--primary-light));
+      background-size: 200% auto;
+      color: var(--white);
+      padding: var(--space-sm) var(--space-lg);
+      border-radius: var(--radius-full);
+      font-weight: 500;
+      letter-spacing: 0.5px;
+      transition: all var(--transition-normal);
+      position: relative;
+      overflow: hidden;
+      z-index: var(--z-normal);
+      box-shadow: var(--shadow-md), 0 0 0 rgba(255, 107, 107, 0);
+    }
+  </style>
+</head>
+<body>
+ 
+  <header>
+    <div class="logo">MakeMyTrip</div>
+    <nav>
+      <ul>
+        <li><a href="flights.html">Flights</a></li>
+        <li><a href="hotels.html">Hotels</a></li>
+        <li><a href="trains.html">Trains</a></li>
+        <li><a href="trips.html">Trips</a></li>
+        
+      </ul>
+    </nav>
+    <div class="auth-buttons">
+      <button onclick="openModal('signup')">Sign Up</button>
+      <button onclick="openModal('login')">Log In</button>
+    </div>
+  </header>
+
+ 
+  <section class="banner">
+    <div class="banner-content">
+      <h1>Plan Your Dream Trip</h1>
+      <form class="search-form" onsubmit="return handleFlightSearch(event)">
+        <input type="text" id="from-location" placeholder="From" required />
+        <input type="text" id="to-location" placeholder="To" required />
+        <input type="date" id="travel-date" required />
+        <button type="submit" class="hardware-accelerated">Search</button>
+      </form>
+    </div>
+  </section>
+
+  
+  <section class="destinations">
+    <h2>Popular Destinations</h2>
+    <div class="carousel">
+      <div class="infinite-scroll-container">
+        <div class="cards-container" id="card-container-1">
+       
+          <div class="card">
+            <div class="card-inner">
+              <div class="card-front">
+                <img src="https://images.pexels.com/photos/2341830/pexels-photo-2341830.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1" alt="Paris" />
+                <div class="card-content">
+                  <h3>Paris</h3>
+                  <p>Explore the city of love and lights.</p>
+                </div>
+              </div>
+              <div class="card-back">
+                <p>Paris is known for its romantic ambiance, rich history, and iconic landmarks like the Eiffel Tower.</p>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-inner">
+              <div class="card-front">
+                <img src="https://images.pexels.com/photos/460672/pexels-photo-460672.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1" alt="New York" />
+                <div class="card-content">
+                  <h3>New York</h3>
+                  <p>The city that never sleeps awaits you.</p>
+                </div>
+              </div>
+              <div class="card-back">
+                <p>New York offers iconic landmarks, vibrant culture, and endless entertainment in the city that never sleeps.</p>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-inner">
+              <div class="card-front">
+                <img src="https://images.pexels.com/photos/3586966/pexels-photo-3586966.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1" alt="Tokyo Night Lights" />
+                <div class="card-content">
+                  <h3>Tokyo</h3>
+                  <p>Experience the blend of tradition and modernity.</p>
+                </div>
+              </div>
+              <div class="card-back">
+                <p>Tokyo is a city of fascinating contrasts, seamlessly blending ancient traditions with cutting-edge technology.</p>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-inner">
+              <div class="card-front">
+                <img src="https://images.pexels.com/photos/532263/pexels-photo-532263.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1" alt="Venice" />
+                <div class="card-content">
+                  <h3>Venice</h3>
+                  <p>Float through the magical city of canals.</p>
+                </div>
+              </div>
+              <div class="card-back">
+                <p>Venice enchants visitors with its network of picturesque canals, historic architecture, and romantic atmosphere.</p>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-inner">
+              <div class="card-front">
+                <img src="https://images.pexels.com/photos/1388030/pexels-photo-1388030.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1" alt="Santorini" />
+                <div class="card-content">
+                  <h3>Santorini</h3>
+                  <p>Discover Greece's most picturesque island.</p>
+                </div>
+              </div>
+              <div class="card-back">
+                <p>Santorini's stunning white-washed buildings, blue domes, and breathtaking sunsets create an unforgettable experience.</p>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-inner">
+              <div class="card-front">
+                <img src="https://images.pexels.com/photos/291732/pexels-photo-291732.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1" alt="Bali" />
+                <div class="card-content">
+                  <h3>Bali</h3>
+                  <p>Relax in this tropical paradise.</p>
+                </div>
+              </div>
+              <div class="card-back">
+                <p>Bali offers a perfect blend of stunning beaches, lush rice terraces, spiritual temples, and warm hospitality.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="cards-container" id="card-container-2">
+          
+        </div>
+      </div>
+    </div>
+    <div class="scroll-progress">
+      <div class="scroll-progress-bar" id="scroll-progress-bar"></div>
+    </div>
+  </section>
+
+ 
+  <footer>
+    Made by Jyot and Mahin
+  </footer>
+
+  
+  <div id="signup-modal" class="modal">
+    <div class="modal-content">
+      <span class="close-modal" onclick="closeModal('signup')">×</span>
+      <h2>Sign Up</h2>
+      <form id="signup-form" onsubmit="handleSignUp(event)">
+        <input type="text" id="signup-username" placeholder="Username" required />
+        <input type="email" id="signup-email" placeholder="Email" required />
+        <input type="password" id="signup-password" placeholder="Password" required />
+        <input type="text" id="signup-mobile" placeholder="Mobile Number (e.g. +91932778XXXX)" required />
+        <button type="button" onclick="generateOtpSignUp()">Generate OTP</button>
+        <input type="text" id="signup-otp" placeholder="Enter OTP" required />
+        <button type="submit">Sign Up</button>
+      </form>
+    </div>
+  </div>
+
+  
+  <div id="login-modal" class="modal">
+    <div class="modal-content">
+      <span class="close-modal" onclick="closeModal('login')">×</span>
+      <h2>Log In</h2>
+      <div id="login-username" class="login-form">
+        <form id="login-form-username" onsubmit="handleLoginUsername(event)">
+          <input type="text" id="login-username-field" placeholder="Username" required />
+          <input type="password" id="login-password" placeholder="Password" required />
+          <button type="submit">Log In</button>
+        </form>
+        <div class="login-option">
+          <span>Or</span>
+          <button onclick="toggleLoginOption()">Login with Mobile OTP</button>
+        </div>
+      </div>
+      <div id="login-mobile" class="login-form" style="display:none;">
+        <form id="login-form-mobile" onsubmit="handleLoginMobile(event)">
+          <input type="text" id="login-mobile-field" placeholder="Mobile Number (e.g. +91932778XXXX)" required />
+          <button type="button" onclick="generateOtpLogin()">Generate OTP</button>
+          <input type="text" id="login-mobile-otp" placeholder="Enter OTP" required />
+          <button type="submit">Log In</button>
+        </form>
+        <div class="login-option">
+          <span>Or</span>
+          <button onclick="toggleLoginOption()">Login with Username & Password</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+  <script>
+    
+    function handleFlightSearch(e) {
+      e.preventDefault();
+      
+      const from = document.getElementById('from-location').value;
+      const to = document.getElementById('to-location').value;
+      const date = document.getElementById('travel-date').value;
+      
+      
+      if (!from || !to) {
+        alert("Please select both From and To destinations.");
+        return false;
+      }
+      
+      if (from === to) {
+        alert('From and To destinations cannot be the same.');
+        return false;
+      }
+      
+      
+      window.location.href = `flights.html?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&date=${encodeURIComponent(date)}`;
+      
+      return false;
+    }
+  </script>
+  <script>
+    
+    function handleSuccessfulLogin(userData, token) {
+      
+      localStorage.setItem('authToken', token);
+      localStorage.setItem('user', JSON.stringify(userData));
+      
+     
+      localStorage.setItem('needsMigration', 'true');
+      
+      
+      window.location.href = 'index.html';
+    }
+  </script>
+</body>
+</html>

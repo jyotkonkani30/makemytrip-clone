@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Flights</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            text-align: center;
+        }
+        nav {
+            background-color: #333;
+            padding: 15px 0;
+        }
+        nav ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+        }
+        nav ul li {
+            margin: 0 20px;
+        }
+        nav ul li a {
+            color: white;
+            text-decoration: none;
+            font-size: 18px;
+            padding: 5px 10px;
+        }
+        .hero {
+            background: #007bff;
+            color: white;
+            padding: 30px;
+        }
+        .flights-container {
+            padding: 20px;
+        }
+        .flight-card {
+            background: white;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+            width: 300px;
+            text-align: center;
+            margin: 10px auto;
+        }
+        .map-container {
+            height: 200px;
+            width: 100%;
+            margin-top: 10px;
+        }
+        .book-btn {
+            background: #28a745;
+            color: white;
+            padding: 10px;
+            border: none;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .book-btn:hover {
+            background: #218838;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <ul>
+            <li><a href="new.html">Home</a></li>
+            <li><a href="flight.html" class="active">Flights</a></li>
+        </ul>
+    </nav>
+    <header class="hero">
+        <h1>Find Your Perfect Flight</h1>
+        <p>Book your journey with ease.</p>
+    </header>
+    <section class="flights-container">
+        <h2>Available Flights</h2>
+        <div id="flights-list"></div>
+    </section>
+    
+    <script>
+        const flights = [
+            { airline: "Air India", from: "Delhi", to: "Mumbai", coords: [[28.6139, 77.2090], [19.0760, 72.8777]], time: "10:00 AM", price: "$150" },
+            { airline: "IndiGo", from: "Mumbai", to: "Chennai", coords: [[19.0760, 72.8777], [13.0827, 80.2707]], time: "12:00 PM", price: "$120" },
+            { airline: "SpiceJet", from: "Bangalore", to: "Kolkata", coords: [[12.9716, 77.5946], [22.5726, 88.3639]], time: "02:00 PM", price: "$180" }
+        ];
+
+        function displayFlights() {
+            let flightsList = document.getElementById("flights-list");
+            flightsList.innerHTML = "";
+            flights.forEach((flight, index) => {
+                let flightCard = document.createElement("div");
+                flightCard.classList.add("flight-card");
+                flightCard.innerHTML = `
+                    <h3>${flight.airline}</h3>
+                    <p>From: ${flight.from} → To: ${flight.to}</p>
+                    <p>Time: ${flight.time}</p>
+                    <p>Price: ${flight.price}</p>
+                    <div id="map-${index}" class="map-container"></div>
+                    <button class="book-btn" onclick="bookFlight('${flight.airline}', '${flight.from}', '${flight.to}', '${flight.time}', '${flight.price}')">Book Now</button>
+                `;
+                flightsList.appendChild(flightCard);
+
+                setTimeout(() => {
+                    createMap(`map-${index}`, flight.coords);
+                }, 100);
+            });
+        }
+
+        function createMap(mapId, coords) {
+            var map = L.map(mapId).setView(coords[0], 5);
+            L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+                attribution: "&copy; OpenStreetMap contributors"
+            }).addTo(map);
+            L.marker(coords[0]).addTo(map).bindPopup("Departure").openPopup();
+            L.marker(coords[1]).addTo(map).bindPopup("Destination");
+            L.polyline(coords, { color: "blue", weight: 3, dashArray: "5, 10" }).addTo(map);
+        }
+
+        function bookFlight(airline, from, to, time, price) {
+            alert(`You have booked a flight!\n\nAirline: ${airline}\nFrom: ${from}\nTo: ${to}\nTime: ${time}\nPrice: ${price}`);
+        }
+
+        displayFlights();
+    </script>
+</body>
+</html>

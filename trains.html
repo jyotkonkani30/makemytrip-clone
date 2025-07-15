@@ -1,0 +1,1268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Trains</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="js/user-trips.js"></script>
+</head>
+<body>
+  <!-- Back to Home Button -->
+  <a href="new.html" class="back-home-btn">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M19 12H5"></path>
+      <path d="M12 19l-7-7 7-7"></path>
+    </svg>
+    <span>Home</span>
+  </a>
+  
+  <!-- Simplified Header -->
+  <header class="flights-header">
+    <h1 class="flight-title">Train Routes</h1>
+  </header>
+
+  <!-- Banner Section - Simplified -->
+  <section class="banner simplified-banner">
+    <div class="banner-content">
+      <h1>Travel India by Train</h1>
+    </div>
+  </section>
+
+  <!-- Train Results Section -->
+  <section class="destinations">
+    <div class="filter-sort-container">
+      <h2>Popular Routes</h2>
+      <div class="flight-filters">
+        <div class="filter">
+          <label>Departure Time</label>
+          <select id="departure-filter">
+            <option value="all">All Times</option>
+            <option value="morning">Morning (4:00 AM - 11:00 AM)</option>
+            <option value="afternoon">Afternoon (11:00 AM - 4:00 PM)</option>
+            <option value="evening">Evening (4:00 PM - 9:00 PM)</option>
+            <option value="night">Night (9:00 PM - 4:00 AM)</option>
+          </select>
+        </div>
+        <div class="filter">
+          <label>Train Class</label>
+          <select id="class-filter">
+            <option value="all">All Classes</option>
+            <option value="SL">Sleeper (SL)</option>
+            <option value="3A">AC 3 Tier (3A)</option>
+            <option value="2A">AC 2 Tier (2A)</option>
+            <option value="FC">AC First Class (FC)</option>
+            <option value="2S">Second Sitting (2S)</option>
+          </select>
+        </div>
+        <div class="filter">
+          <label>Sort By</label>
+          <select id="sort-option">
+            <option value="departure">Departure Time</option>
+            <option value="duration">Duration</option>
+            <option value="price-low">Price: Low to High</option>
+            <option value="price-high">Price: High to Low</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    
+    <div id="trains-list">
+      <!-- Train results will be displayed here -->
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    © 2025 All Rights Reserved.
+  </footer>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Check if user is logged in
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        console.log('User not logged in');
+      }
+
+      // Setup filters
+      const departureFilter = document.getElementById('departure-filter');
+      const classFilter = document.getElementById('class-filter');
+      const sortOption = document.getElementById('sort-option');
+      
+      if (departureFilter && classFilter && sortOption) {
+        [departureFilter, classFilter, sortOption].forEach(filter => {
+          filter.addEventListener('change', function() {
+            displayTrains('Delhi', 'Mumbai', '2023-12-20');
+          });
+        });
+      }
+      
+      // Display trains on page load
+      displayTrains('Delhi', 'Mumbai', '2023-12-20');
+      
+      // Display booked trains if any
+      displayBookedTrains();
+    });
+    
+    function displayTrains(from, to, date) {
+      const trainsList = document.getElementById('trains-list');
+      
+      const mockTrains = [
+        { 
+          number: '12301',
+          name: 'Rajdhani Express', 
+          departureTime: '16:35', 
+          arrivalTime: '22:15', 
+          duration: '5h 40m',
+          from: from,
+          to: to,
+          classes: ['SL', '3A', '2A', 'FC'],
+          price: {
+            'SL': 750,
+            '3A': 1950,
+            '2A': 2650,
+            'FC': 4500
+          },
+          availability: {
+            'SL': 'Available 232',
+            '3A': 'Available 54',
+            '2A': 'Available 12',
+            'FC': 'RAC 4'
+          }
+        },
+        { 
+          number: '12505',
+          name: 'Sampark Kranti Express', 
+          departureTime: '07:20', 
+          arrivalTime: '13:40', 
+          duration: '6h 20m',
+          from: from,
+          to: to,
+          classes: ['SL', '3A', '2A'],
+          price: {
+            'SL': 650,
+            '3A': 1750,
+            '2A': 2350
+          },
+          availability: {
+            'SL': 'Available 186',
+            '3A': 'Available 23',
+            '2A': 'RAC 8'
+          }
+        },
+        { 
+          number: '12555',
+          name: 'Gorakhdham Express', 
+          departureTime: '11:45', 
+          arrivalTime: '19:15', 
+          duration: '7h 30m',
+          from: from,
+          to: to,
+          classes: ['SL', '3A', '2S'],
+          price: {
+            'SL': 550,
+            '3A': 1450,
+            '2S': 350
+          },
+          availability: {
+            'SL': 'Available 102',
+            '3A': 'Waiting List 12',
+            '2S': 'Available 220'
+          }
+        },
+        { 
+          number: '12561',
+          name: 'Shatabdi Express', 
+          departureTime: '06:10', 
+          arrivalTime: '12:30', 
+          duration: '6h 20m',
+          from: from,
+          to: to,
+          classes: ['2S', 'CC', 'EC'],
+          price: {
+            '2S': 450,
+            'CC': 1250,
+            'EC': 2150
+          },
+          availability: {
+            '2S': 'Available 165',
+            'CC': 'Available 42',
+            'EC': 'Available 24'
+          }
+        },
+        { 
+          number: '12910',
+          name: 'Garib Rath Express', 
+          departureTime: '21:35', 
+          arrivalTime: '05:15', 
+          duration: '7h 40m',
+          from: from,
+          to: to,
+          classes: ['3A'],
+          price: {
+            '3A': 1150
+          },
+          availability: {
+            '3A': 'Available 219'
+          }
+        }
+      ];
+      
+      let filteredTrains = mockTrains;
+      
+      const departureFilter = document.getElementById('departure-filter').value;
+      if (departureFilter !== 'all') {
+        if (departureFilter === 'morning') {
+          filteredTrains = filteredTrains.filter(train => {
+            const hour = parseInt(train.departureTime.split(':')[0]);
+            return hour >= 4 && hour < 11;
+          });
+        } else if (departureFilter === 'afternoon') {
+          filteredTrains = filteredTrains.filter(train => {
+            const hour = parseInt(train.departureTime.split(':')[0]);
+            return hour >= 11 && hour < 16;
+          });
+        } else if (departureFilter === 'evening') {
+          filteredTrains = filteredTrains.filter(train => {
+            const hour = parseInt(train.departureTime.split(':')[0]);
+            return hour >= 16 && hour < 21;
+          });
+        } else if (departureFilter === 'night') {
+          filteredTrains = filteredTrains.filter(train => {
+            const hour = parseInt(train.departureTime.split(':')[0]);
+            return hour >= 21 || hour < 4;
+          });
+        }
+      }
+      
+      const classFilter = document.getElementById('class-filter').value;
+      if (classFilter !== 'all') {
+        filteredTrains = filteredTrains.filter(train => train.classes.includes(classFilter));
+      }
+      
+      const sortOption = document.getElementById('sort-option').value;
+      if (sortOption === 'departure') {
+        filteredTrains.sort((a, b) => {
+          const hourA = parseInt(a.departureTime.split(':')[0]);
+          const minuteA = parseInt(a.departureTime.split(':')[1]);
+          const hourB = parseInt(b.departureTime.split(':')[0]);
+          const minuteB = parseInt(b.departureTime.split(':')[1]);
+          
+          return (hourA * 60 + minuteA) - (hourB * 60 + minuteB);
+        });
+      } else if (sortOption === 'duration') {
+        filteredTrains.sort((a, b) => {
+          const durationA = a.duration.replace('h ', '').replace('m', '');
+          const durationB = b.duration.replace('h ', '').replace('m', '');
+          return durationA - durationB;
+        });
+      } else if (sortOption === 'price-low') {
+        filteredTrains.sort((a, b) => {
+          const minPriceA = Math.min(...Object.values(a.price));
+          const minPriceB = Math.min(...Object.values(b.price));
+          return minPriceA - minPriceB;
+        });
+      } else if (sortOption === 'price-high') {
+        filteredTrains.sort((a, b) => {
+          const maxPriceA = Math.max(...Object.values(a.price));
+          const maxPriceB = Math.max(...Object.values(b.price));
+          return maxPriceB - maxPriceA;
+        });
+      }
+      
+      trainsList.innerHTML = '';
+      
+      trainsList.innerHTML += `<h3>Available Trains from ${from} to ${to} on ${date}</h3>`;
+      
+      const resultsCount = document.createElement('p');
+      resultsCount.className = 'results-count';
+      resultsCount.textContent = `${filteredTrains.length} trains found`;
+      trainsList.appendChild(resultsCount);
+      
+      filteredTrains.forEach(train => {
+        const trainCard = document.createElement('div');
+        trainCard.className = 'train-card';
+        
+        let classesHTML = '';
+        train.classes.forEach(cls => {
+          const isBooked = UserTrips.getTrips('trains').some(
+            bookedTrain => bookedTrain.number === train.number && 
+                           bookedTrain.trainClass === cls &&
+                           bookedTrain.from === train.from &&
+                           bookedTrain.to === train.to
+          );
+          
+          classesHTML += `
+            <div class="fare-row ${isBooked ? 'booked-fare' : ''}">
+              <div class="train-class">${cls}</div>
+              <div class="fare-price">₹${train.price[cls]}</div>
+              <div class="fare-availability">${isBooked ? '<span class="booked-status">BOOKED</span>' : train.availability[cls]}</div>
+              <button class="book-class-btn ${isBooked ? 'booked' : ''}" 
+                      ${isBooked ? 'disabled' : `onclick="confirmTrainBooking('${train.name}', '${train.number}', '${cls}', ${train.price[cls]}, '${train.from}', '${train.to}', '${train.departureTime}', '${train.arrivalTime}')"`}>
+                ${isBooked ? 'Booked' : 'Book'}
+              </button>
+            </div>
+          `;
+        });
+        
+        trainCard.innerHTML = `
+          <div class="train-header">
+            <div class="train-name-number">
+              <h3>${train.name}</h3>
+              <p class="train-number">#${train.number}</p>
+            </div>
+            <div class="runs-on">
+              <span>Runs on:</span>
+              <div class="week-days">
+                <span class="day active">S</span>
+                <span class="day active">M</span>
+                <span class="day">T</span>
+                <span class="day active">W</span>
+                <span class="day active">T</span>
+                <span class="day active">F</span>
+                <span class="day">S</span>
+              </div>
+            </div>
+          </div>
+          <div class="train-journey">
+            <div class="journey-time">
+              <div class="departure-info">
+                <h4>${train.departureTime}</h4>
+                <p>${train.from}</p>
+              </div>
+              <div class="duration">
+                <p>${train.duration}</p>
+                <div class="journey-line"></div>
+              </div>
+              <div class="arrival-info">
+                <h4>${train.arrivalTime}</h4>
+                <p>${train.to}</p>
+              </div>
+            </div>
+          </div>
+          <div class="train-fares">
+            <div class="fares-header">
+              <div>Class</div>
+              <div>Fare</div>
+              <div>Availability</div>
+              <div>Book</div>
+            </div>
+            <div class="fares-container">
+              ${classesHTML}
+            </div>
+          </div>
+        `;
+        
+        trainsList.appendChild(trainCard);
+      });
+      
+      if (filteredTrains.length === 0) {
+        const noTrains = document.createElement('div');
+        noTrains.className = 'no-flights';
+        noTrains.innerHTML = `
+          <img src="images/no-results.svg" alt="No trains found" />
+          <h4>No trains found</h4>
+          <p>Try adjusting your filters or changing your dates.</p>
+        `;
+        trainsList.appendChild(noTrains);
+      }
+    }
+    
+    function displayBookedTrains() {
+      const userTrains = UserTrips.getTrips('trains');
+      
+      if (!userTrains || userTrains.length === 0) {
+        return;
+      }
+      
+      let bookedTrainsSection = document.getElementById('booked-trains-section');
+      if (!bookedTrainsSection) {
+        bookedTrainsSection = document.createElement('section');
+        bookedTrainsSection.id = 'booked-trains-section';
+        bookedTrainsSection.className = 'destinations booked-trains';
+        document.querySelector('.destinations').after(bookedTrainsSection);
+      }
+      
+      bookedTrainsSection.innerHTML = '';
+      
+      const header = document.createElement('h2');
+      header.textContent = 'Your Booked Trains';
+      bookedTrainsSection.appendChild(header);
+      
+      const bookedCount = document.createElement('p');
+      bookedCount.className = 'results-count';
+      bookedCount.textContent = `${userTrains.length} booked trains`;
+      bookedTrainsSection.appendChild(bookedCount);
+      
+      const bookedTrainsList = document.createElement('div');
+      bookedTrainsList.id = 'booked-trains-list';
+      bookedTrainsSection.appendChild(bookedTrainsList);
+      
+      userTrains.forEach(train => {
+        const trainCard = document.createElement('div');
+        trainCard.className = 'train-card booked-train';
+        
+        trainCard.innerHTML = `
+          <div class="train-header">
+            <div class="train-name-number">
+              <h3>${train.name}</h3>
+              <p class="train-number">#${train.number}</p>
+              <div class="booking-id">Booking ID: ${train.bookingId}</div>
+            </div>
+            <div class="booked-tag">BOOKED</div>
+          </div>
+          <div class="train-journey">
+            <div class="journey-time">
+              <div class="departure-info">
+                <h4>${train.departureTime}</h4>
+                <p>${train.from}</p>
+              </div>
+              <div class="duration">
+                <p>${train.duration || 'Direct'}</p>
+                <div class="journey-line"></div>
+              </div>
+              <div class="arrival-info">
+                <h4>${train.arrivalTime}</h4>
+                <p>${train.to}</p>
+              </div>
+            </div>
+          </div>
+          <div class="booking-details">
+            <div class="booking-detail-row">
+              <span>Class:</span>
+              <span>${train.trainClass}</span>
+            </div>
+            <div class="booking-detail-row">
+              <span>Passengers:</span>
+              <span>${train.passengers}</span>
+            </div>
+            <div class="booking-detail-row">
+              <span>Travel Date:</span>
+              <span>${formatDate(train.travelDate)}</span>
+            </div>
+            <div class="booking-detail-row">
+              <span>Booking Date:</span>
+              <span>${formatDate(train.bookingDate)}</span>
+            </div>
+            <div class="booking-detail-row total">
+              <span>Total Fare:</span>
+              <span>₹${train.totalPrice}</span>
+            </div>
+          </div>
+        `;
+        
+        bookedTrainsList.appendChild(trainCard);
+      });
+    }
+    
+    function confirmTrainBooking(trainName, trainNumber, trainClass, price, from, to, departureTime, arrivalTime) {
+      if (!document.getElementById('booking-confirmation-alert')) {
+        const confirmationAlert = document.createElement('div');
+        confirmationAlert.id = 'booking-confirmation-alert';
+        confirmationAlert.className = 'booking-confirmation-alert';
+        
+        confirmationAlert.innerHTML = `
+          <div class="confirmation-alert-content">
+            <div class="confirmation-alert-header">
+              <h3>Confirm Your Booking</h3>
+              <span class="close-alert" onclick="closeConfirmationAlert()">&times;</span>
+            </div>
+            <div class="confirmation-alert-body">
+              <div id="train-booking-details"></div>
+              <div class="booking-options">
+                <div class="booking-row">
+                  <label>Number of Passengers:</label>
+                  <div class="booking-counter">
+                    <button type="button" onclick="updatePassengerCount(-1)">-</button>
+                    <span id="booking-passengers-count">1</span>
+                    <button type="button" onclick="updatePassengerCount(1)">+</button>
+                  </div>
+                </div>
+              </div>
+              <div class="price-details">
+                <div class="detail-row">
+                  <span>Fare per passenger:</span>
+                  <span>₹<span id="fare-per-passenger"></span></span>
+                </div>
+                <div class="detail-row">
+                  <span>Passengers:</span>
+                  <span id="passengers-count"></span>
+                </div>
+                <div class="detail-row">
+                  <span>Platform Fees:</span>
+                  <span>₹25</span>
+                </div>
+                <div class="detail-row total">
+                  <span>Total Price:</span>
+                  <span>₹<span id="total-price"></span></span>
+                </div>
+              </div>
+            </div>
+            <div class="confirmation-alert-footer">
+              <button class="cancel-booking-btn" onclick="closeConfirmationAlert()">Cancel</button>
+              <button class="confirm-booking-btn" onclick="processTrainBooking()">Confirm Booking</button>
+            </div>
+          </div>
+        `;
+        
+        document.body.appendChild(confirmationAlert);
+      }
+      
+      const confirmationAlert = document.getElementById('booking-confirmation-alert');
+      confirmationAlert.setAttribute('data-train-name', trainName);
+      confirmationAlert.setAttribute('data-train-number', trainNumber);
+      confirmationAlert.setAttribute('data-train-class', trainClass);
+      confirmationAlert.setAttribute('data-price', price);
+      confirmationAlert.setAttribute('data-from', from);
+      confirmationAlert.setAttribute('data-to', to);
+      confirmationAlert.setAttribute('data-departure-time', departureTime);
+      confirmationAlert.setAttribute('data-arrival-time', arrivalTime);
+      
+      const trainBookingDetails = document.getElementById('train-booking-details');
+      trainBookingDetails.innerHTML = `
+        <div class="train-details-summary">
+          <h4>${trainName} (${trainNumber})</h4>
+          <div class="detail-row">
+            <span class="detail-label">From:</span>
+            <span class="detail-value">${from} (${departureTime})</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">To:</span>
+            <span class="detail-value">${to} (${arrivalTime})</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Class:</span>
+            <span class="detail-value">${trainClass}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Date:</span>
+            <span class="detail-value">${new Date().toLocaleDateString('en-US', {
+              weekday: 'short',
+              year: 'numeric',
+              month: 'short',
+              day: 'numeric'
+            })}</span>
+          </div>
+        </div>
+      `;
+      
+      document.getElementById('booking-passengers-count').textContent = 1;
+      
+      updateTrainPrice(price);
+      
+      confirmationAlert.style.display = 'flex';
+      setTimeout(() => {
+        confirmationAlert.classList.add('show');
+      }, 10);
+    }
+    
+    function closeConfirmationAlert() {
+      const confirmationAlert = document.getElementById('booking-confirmation-alert');
+      if (confirmationAlert) {
+        confirmationAlert.classList.remove('show');
+        setTimeout(() => {
+          confirmationAlert.style.display = 'none';
+        }, 300);
+      }
+    }
+    
+    function updatePassengerCount(change) {
+      const passengersElement = document.getElementById('booking-passengers-count');
+      let passengers = parseInt(passengersElement.textContent) + change;
+      
+      passengers = Math.max(1, Math.min(passengers, 6));
+      
+      passengersElement.textContent = passengers;
+      
+      const confirmationAlert = document.getElementById('booking-confirmation-alert');
+      const price = parseInt(confirmationAlert.getAttribute('data-price'));
+      updateTrainPrice(price);
+    }
+    
+    function updateTrainPrice(price) {
+      const passengers = parseInt(document.getElementById('booking-passengers-count').textContent);
+      
+      const platformFee = 25;
+      const totalPrice = (price * passengers) + platformFee;
+      
+      document.getElementById('fare-per-passenger').textContent = price;
+      document.getElementById('passengers-count').textContent = passengers;
+      document.getElementById('total-price').textContent = totalPrice;
+    }
+    
+    function processTrainBooking() {
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        alert('You need to be logged in to book a train');
+        return;
+      }
+      
+      const confirmationAlert = document.getElementById('booking-confirmation-alert');
+      
+      const trainName = confirmationAlert.getAttribute('data-train-name');
+      const trainNumber = confirmationAlert.getAttribute('data-train-number');
+      const trainClass = confirmationAlert.getAttribute('data-train-class');
+      const price = parseInt(confirmationAlert.getAttribute('data-price'));
+      const from = confirmationAlert.getAttribute('data-from');
+      const to = confirmationAlert.getAttribute('data-to');
+      const departureTime = confirmationAlert.getAttribute('data-departure-time');
+      const arrivalTime = confirmationAlert.getAttribute('data-arrival-time');
+      
+      const passengers = parseInt(document.getElementById('booking-passengers-count').textContent);
+      const totalPrice = parseInt(document.getElementById('total-price').textContent);
+      
+      const bookingId = generateTrainBookingId();
+      
+      const booking = {
+        name: trainName,
+        number: trainNumber,
+        trainClass: trainClass,
+        price: price,
+        from: from,
+        to: to,
+        departureTime: departureTime,
+        arrivalTime: arrivalTime,
+        passengers: passengers,
+        totalPrice: totalPrice,
+        travelDate: new Date().toISOString().split('T')[0],
+        bookingId: bookingId,
+        bookingDate: new Date().toISOString()
+      };
+      
+      const saved = UserTrips.saveTrip('trains', booking);
+      
+      if (saved) {
+        closeConfirmationAlert();
+        showBookingSuccess(`Your booking on ${trainName} has been confirmed!`);
+        displayTrains('Delhi', 'Mumbai', '2023-12-20');
+        displayBookedTrains();
+      } else {
+        alert('There was a problem saving your booking. Please try again.');
+      }
+    }
+    
+    function showBookingSuccess(message) {
+      if (!document.getElementById('booking-success')) {
+        const successMessage = document.createElement('div');
+        successMessage.id = 'booking-success';
+        successMessage.className = 'booking-success';
+        
+        successMessage.innerHTML = `
+          <div class="success-content">
+            <div class="success-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+              </svg>
+            </div>
+            <div id="success-message"></div>
+          </div>
+        `;
+        
+        document.body.appendChild(successMessage);
+      }
+      
+      document.getElementById('success-message').textContent = message;
+      
+      const successElement = document.getElementById('booking-success');
+      successElement.style.display = 'flex';
+      setTimeout(() => {
+        successElement.classList.add('show');
+      }, 10);
+      
+      setTimeout(() => {
+        successElement.classList.remove('show');
+        setTimeout(() => {
+          successElement.style.display = 'none';
+        }, 300);
+      }, 3000);
+    }
+    
+    function generateTrainBookingId() {
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      const numbers = '0123456789';
+      let id = 'TR';
+      
+      for (let i = 0; i < 2; i++) {
+        id += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      
+      id += '-';
+      
+      for (let i = 0; i < 6; i++) {
+        id += numbers.charAt(Math.floor(Math.random() * numbers.length));
+      }
+      
+      return id;
+    }
+    
+    function formatDate(dateString) {
+      const options = { year: 'numeric', month: 'short', day: 'numeric' };
+      return new Date(dateString).toLocaleDateString('en-US', options);
+    }
+    
+    window.onload = function() {
+      const banner = document.querySelector('.banner');
+      banner.style.backgroundImage = 'url("https://images.unsplash.com/photo-1474487548417-781cb71495f3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1920")';
+      banner.style.backgroundSize = 'cover';
+      banner.style.backgroundPosition = 'center';
+    };
+  </script>
+
+  <style>
+    /* Back to Home Button - Make consistent with hotels page */
+    .back-home-btn {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.9);
+      color: var(--primary);
+      padding: 10px 18px;
+      border-radius: var(--radius-full);
+      box-shadow: var(--shadow-md);
+      z-index: var(--z-top);
+      transition: all var(--transition-normal);
+      font-weight: 500;
+      font-size: 15px;
+    }
+    
+    .back-home-btn:hover {
+      background: var(--primary);
+      color: white;
+      transform: translateX(-5px);
+      box-shadow: var(--shadow-lg);
+    }
+    
+    .back-home-btn svg {
+      width: 16px;
+      height: 16px;
+    }
+    
+    /* Enhanced Train Card Styles - More similar to hotel cards */
+    .train-card {
+      background: white;
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow-md);
+      transition: all var(--transition-normal);
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .train-card:hover {
+      transform: translateY(-5px);
+      box-shadow: var(--shadow-lg);
+    }
+    
+    .train-header {
+      padding: 15px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(0,0,0,0.05);
+      background: linear-gradient(to right, var(--off-white), rgba(255, 255, 255, 0.9));
+    }
+    
+    /* Make buttons consistent with hotels */
+    .book-class-btn {
+      background: linear-gradient(45deg, var(--primary-dark), var(--primary));
+      color: white;
+      border: none;
+      padding: 8px 15px;
+      border-radius: var(--radius-md);
+      font-weight: 500;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: all var(--transition-normal);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .book-class-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+    
+    /* Add drop shadow to day indicators for better visibility */
+    .day.active {
+      box-shadow: var(--shadow-sm);
+    }
+    
+    /* Add slightly rounded corners to fare rows for better aesthetics */
+    .fare-row {
+      border-radius: 4px;
+      transition: background-color 0.2s ease;
+    }
+    
+    .fare-row:hover {
+      background-color: var(--off-white);
+    }
+    
+    /* Make simplified banner consistent with hotels */
+    .simplified-banner {
+      height: 40vh;
+      min-height: 300px;
+    }
+    
+    /* Train-specific styles */
+    .train-card {
+      background: white;
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow-md);
+      transition: all var(--transition-normal);
+    }
+    
+    .train-card:hover {
+      transform: translateY(-5px);
+      box-shadow: var(--shadow-lg);
+    }
+    
+    .train-header {
+      padding: 15px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(0,0,0,0.05);
+      background: rgba(0,0,0,0.02);
+    }
+    
+    .train-name-number h3 {
+      margin-bottom: 0;
+      color: var(--text-dark);
+    }
+    
+    .train-number {
+      font-size: 0.9rem;
+      color: var(--text-medium);
+    }
+    
+    .runs-on {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+    }
+    
+    .week-days {
+      display: flex;
+      gap: 5px;
+      margin-top: 5px;
+    }
+    
+    .day {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--off-white);
+      font-size: 0.8rem;
+    }
+    
+    .day.active {
+      background: var(--primary);
+      color: white;
+    }
+    
+    .train-journey {
+      padding: 20px;
+      border-bottom: 1px solid rgba(0,0,0,0.05);
+    }
+    
+    .journey-time {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    
+    .departure-info, .arrival-info {
+      text-align: center;
+    }
+    
+    .departure-info h4, .arrival-info h4 {
+      margin-bottom: 5px;
+      color: var(--text-dark);
+    }
+    
+    .departure-info p, .arrival-info p {
+      margin: 0;
+      color: var(--text-medium);
+      font-size: 0.9rem;
+    }
+    
+    .duration {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      color: var(--text-medium);
+      text-align: center;
+      margin: 0 20px;
+    }
+    
+    .journey-line {
+      width: 150px;
+      height: 2px;
+      background: var(--text-light);
+      position: relative;
+      margin: 10px 0;
+    }
+    
+    .journey-line:before, .journey-line:after {
+      content: "";
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--text-light);
+      top: -3px;
+    }
+    
+    .journey-line:before {
+      left: 0;
+    }
+    
+    .journey-line:after {
+      right: 0;
+    }
+    
+    .train-fares {
+      padding: 15px 20px;
+    }
+    
+    .fares-header {
+      display: grid;
+      grid-template-columns: 1fr 1fr 2fr 1fr;
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: var(--text-medium);
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(0,0,0,0.05);
+    }
+    
+    .fares-container {
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    
+    .fare-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 2fr 1fr;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(0,0,0,0.02);
+    }
+    
+    .train-class {
+      font-weight: 500;
+    }
+    
+    .fare-price {
+      color: var(--primary);
+      font-weight: 600;
+    }
+    
+    .fare-availability {
+      color: green;
+      font-size: 0.9rem;
+    }
+    
+    .book-class-btn {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: all var(--transition-normal);
+    }
+    
+    .book-class-btn:hover {
+      background: var(--primary-dark);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-sm);
+    }
+    
+    .class-dropdown {
+      position: relative;
+      min-width: 150px;
+    }
+    
+    .class-dropdown button {
+      width: 100%;
+      text-align: left;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .class-option {
+      padding: 10px 15px;
+      cursor: pointer;
+      transition: all var(--transition-normal);
+    }
+    
+    .class-option:hover {
+      background: rgba(0,0,0,0.05);
+    }
+    
+    .passenger-count {
+      background: rgba(255,255,255,0.9);
+      border-radius: var(--radius-md);
+      padding: var(--space-md) var(--space-lg);
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    
+    .passenger-count input {
+      padding: 8px;
+      background: white;
+      border: 1px solid rgba(0,0,0,0.1);
+      border-radius: var(--radius-sm);
+    }
+    
+    @media (max-width: 768px) {
+      .train-header, .journey-time {
+        flex-direction: column;
+        gap: 10px;
+      }
+      
+      .runs-on {
+        align-items: center;
+      }
+      
+      .fares-header, .fare-row {
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      
+      .fares-header div:nth-child(3), .fare-row div:nth-child(3) {
+        display: none;
+      }
+    }
+    
+    /* Add new simplified banner style */
+    .simplified-banner {
+      height: 40vh;
+      min-height: 300px;
+    }
+    
+    /* Enhanced Filter Styling - matching hotels.html */
+    .filter-sort-container {
+      background: rgba(255, 255, 255, 0.8);
+      border-radius: var(--radius-lg);
+      padding: 15px 20px;
+      box-shadow: var(--shadow-md);
+      margin-bottom: 30px;
+      border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    
+    .filter-sort-container h2 {
+      margin-bottom: 15px;
+      font-size: 1.5rem;
+      color: var(--text-dark);
+      position: relative;
+      display: inline-block;
+    }
+    
+    .filter-sort-container h2::after {
+      content: '';
+      position: absolute;
+      bottom: -5px;
+      left: 0;
+      width: 40%;
+      height: 2px;
+      background: linear-gradient(90deg, var(--primary), transparent);
+      border-radius: var(--radius-full);
+    }
+    
+    .flight-filters {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      align-items: flex-end;
+    }
+    
+    .filter {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-width: 180px;
+      flex-grow: 1;
+    }
+    
+    .filter label {
+      font-size: 0.85rem;
+      color: var(--text-medium);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    /* Custom Select Styling */
+    .filter select {
+      padding: 10px 35px 10px 15px;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      background: white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%234a5568' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") no-repeat right 10px center;
+      background-size: 16px;
+      color: var(--text-dark);
+      font-size: 0.95rem;
+      appearance: none;
+      cursor: pointer;
+      transition: all var(--transition-normal);
+      box-shadow: var(--shadow-sm);
+    }
+    
+    .filter select:hover {
+      border-color: var(--primary-light);
+      box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1);
+    }
+    
+    .filter select:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.2);
+    }
+    
+    /* Filter option style - applied to all select elements */
+    .filter select option {
+      padding: 10px;
+      font-size: 0.95rem;
+    }
+    
+    /* Special styling for each filter type */
+    #departure-filter {
+      border-left: 3px solid var(--primary);
+    }
+    
+    #class-filter {
+      border-left: 3px solid var(--secondary);
+    }
+    
+    #sort-option {
+      border-left: 3px solid #a7ffd6; /* var(--accent) */
+    }
+    
+    /* Results count styling */
+    .results-count {
+      background: rgba(255, 255, 255, 0.7);
+      padding: 8px 15px;
+      border-radius: var(--radius-full);
+      color: var(--text-medium);
+      font-size: 0.9rem;
+      font-weight: 500;
+      display: inline-block;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow-sm);
+    }
+    
+    /* Confirmation Alert Styles */
+    .booking-confirmation-alert {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: var(--z-top);
+      transition: opacity 0.3s ease;
+    }
+    
+    .booking-confirmation-alert.show {
+      display: flex;
+      opacity: 1;
+    }
+    
+    .confirmation-alert-content {
+      background: white;
+      border-radius: var(--radius-lg);
+      width: 90%;
+      max-width: 400px;
+      box-shadow: var(--shadow-lg);
+      overflow: hidden;
+    }
+    
+    .confirmation-alert-header {
+      background: var(--primary);
+      color: white;
+      padding: 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .confirmation-alert-header h3 {
+      margin: 0;
+    }
+    
+    .close-alert {
+      cursor: pointer;
+      font-size: 1.5rem;
+    }
+    
+    .confirmation-alert-body {
+      padding: 20px;
+    }
+    
+    .booking-detail-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    
+    .booking-detail-row.total {
+      font-weight: 600;
+      color: var(--primary);
+    }
+    
+    .confirmation-alert-footer {
+      display: flex;
+      justify-content: space-between;
+      padding: 15px;
+      border-top: 1px solid rgba(0, 0, 0, 0.1);
+    }
+    
+    .cancel-booking-btn, .confirm-booking-btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: all var(--transition-normal);
+    }
+    
+    .cancel-booking-btn {
+      background: var(--text-light);
+      color: var(--text-dark);
+    }
+    
+    .cancel-booking-btn:hover {
+      background: var(--text-medium);
+      color: white;
+    }
+    
+    .confirm-booking-btn {
+      background: var(--primary);
+      color: white;
+    }
+    
+    .confirm-booking-btn:hover {
+      background: var(--primary-dark);
+    }
+  </style>
+</body>
+</html>

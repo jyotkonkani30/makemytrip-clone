@@ -1,0 +1,1146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hotels</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="js/user-trips.js"></script>
+</head>
+<body>
+  <!-- Back to Home Button -->
+  <a href="new.html" class="back-home-btn">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M19 12H5"></path>
+      <path d="M12 19l-7-7 7-7"></path>
+    </svg>
+    <span>Home</span>
+  </a>
+  
+  <!-- Simplified Header -->
+  <header class="flights-header">
+    <h1 class="flight-title">Popular Hotels</h1>
+  </header>
+
+  <!-- Banner Section - Simplified -->
+  <section class="banner simplified-banner">
+    <div class="banner-content">
+      <h1>Discover Amazing Stays</h1>
+    </div>
+  </section>
+
+  <!-- Hotel Results Section -->
+  <section class="destinations">
+    <div class="filter-sort-container">
+      <h2>Featured Hotels</h2>
+      <div class="flight-filters">
+        <div class="filter">
+          <label>Price Range</label>
+          <select id="price-filter">
+            <option value="all">All Prices</option>
+            <option value="budget">Budget (Under ₹3,000)</option>
+            <option value="moderate">Moderate (₹3,000 - ₹7,000)</option>
+            <option value="luxury">Luxury (Above ₹7,000)</option>
+          </select>
+        </div>
+        <div class="filter">
+          <label>Star Rating</label>
+          <select id="star-filter">
+            <option value="all">All Ratings</option>
+            <option value="5">5 Star</option>
+            <option value="4">4 Star</option>
+            <option value="3">3 Star</option>
+            <option value="2">2 Star & Below</option>
+          </select>
+        </div>
+        <div class="filter">
+          <label>Sort By</label>
+          <select id="sort-option">
+            <option value="popularity">Popularity</option>
+            <option value="price-low">Price: Low to High</option>
+            <option value="price-high">Price: High to Low</option>
+            <option value="rating">Guest Rating</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    
+    <div id="hotels-list">
+      <!-- Hotel results will be displayed here -->
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    © 2025 All Rights Reserved.
+  </footer>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Check if user is logged in
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        console.log('User not logged in');
+      }
+      
+      // Initialize window.bookedHotels to empty array to prevent errors
+      window.bookedHotels = [];
+      
+      // Display hotels on page load
+      displayHotels('Popular Destinations', '2023-12-20', '2023-12-25');
+      
+      // Display booked hotels on page load
+      displayBookedHotels();
+    });
+    
+    function displayHotels(destination, checkIn, checkOut) {
+      const hotelsList = document.getElementById('hotels-list');
+      
+      // Mock hotel data
+      const mockHotels = [
+        { 
+          name: 'Grand Palace Hotel', 
+          location: destination,
+          price: 8500,
+          originalPrice: 10000,
+          discount: 15,
+          rating: 4.7,
+          stars: 5,
+          reviews: 1243,
+          amenities: ['Swimming Pool', 'Spa', 'Free WiFi', 'Restaurant', 'Bar', 'Gym'],
+          image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
+        },
+        { 
+          name: 'City Center Inn', 
+          location: destination,
+          price: 3200,
+          originalPrice: 4000,
+          discount: 20,
+          rating: 4.1,
+          stars: 3,
+          reviews: 856,
+          amenities: ['Free WiFi', 'Restaurant', 'Room Service'],
+          image: 'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
+        },
+        { 
+          name: 'Luxury Plaza Resort', 
+          location: destination,
+          price: 12000,
+          originalPrice: 15000,
+          discount: 20,
+          rating: 4.9,
+          stars: 5,
+          reviews: 2156,
+          amenities: ['Swimming Pool', 'Spa', 'Free WiFi', 'Restaurant', 'Bar', 'Gym', 'Beach Access'],
+          image: 'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
+        },
+        { 
+          name: 'Budget Stay Inn', 
+          location: destination,
+          price: 1800,
+          originalPrice: 2000,
+          discount: 10,
+          rating: 3.8,
+          stars: 2,
+          reviews: 423,
+          amenities: ['Free WiFi', 'Room Service'],
+          image: 'https://images.unsplash.com/photo-1587985064135-0366536eab42?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
+        },
+        { 
+          name: 'Serene Valley Resort', 
+          location: destination,
+          price: 6500,
+          originalPrice: 7500,
+          discount: 13,
+          rating: 4.5,
+          stars: 4,
+          reviews: 967,
+          amenities: ['Swimming Pool', 'Free WiFi', 'Restaurant', 'Gym'],
+          image: 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
+        }
+      ];
+      
+      // Apply filters
+      let filteredHotels = mockHotels;
+      
+      // Price filter
+      const priceFilter = document.getElementById('price-filter').value;
+      if (priceFilter !== 'all') {
+        if (priceFilter === 'budget') {
+          filteredHotels = filteredHotels.filter(hotel => hotel.price < 3000);
+        } else if (priceFilter === 'moderate') {
+          filteredHotels = filteredHotels.filter(hotel => hotel.price >= 3000 && hotel.price <= 7000);
+        } else if (priceFilter === 'luxury') {
+          filteredHotels = filteredHotels.filter(hotel => hotel.price > 7000);
+        }
+      }
+      
+      // Star rating filter
+      const starFilter = document.getElementById('star-filter').value;
+      if (starFilter !== 'all') {
+        const stars = parseInt(starFilter);
+        if (stars === 2) {
+          filteredHotels = filteredHotels.filter(hotel => hotel.stars <= 2);
+        } else {
+          filteredHotels = filteredHotels.filter(hotel => hotel.stars === stars);
+        }
+      }
+      
+      // Apply sorting
+      const sortOption = document.getElementById('sort-option').value;
+      if (sortOption === 'price-low') {
+        filteredHotels.sort((a, b) => a.price - b.price);
+      } else if (sortOption === 'price-high') {
+        filteredHotels.sort((a, b) => b.price - a.price);
+      } else if (sortOption === 'rating') {
+        filteredHotels.sort((a, b) => b.rating - a.rating);
+      } else if (sortOption === 'popularity') {
+        filteredHotels.sort((a, b) => b.reviews - a.reviews);
+      }
+      
+      // Clear loading message
+      hotelsList.innerHTML = '';
+      
+      // Show hotel details
+      hotelsList.innerHTML += `<h3>Available Hotels in ${destination} from ${checkIn} to ${checkOut}</h3>`;
+      
+      // Display number of results
+      const resultsCount = document.createElement('p');
+      resultsCount.className = 'results-count';
+      resultsCount.textContent = `${filteredHotels.length} hotels found`;
+      hotelsList.appendChild(resultsCount);
+      
+      // Display each hotel with improved card design
+      filteredHotels.forEach(hotel => {
+        // Check if hotel is already booked - using UserTrips instead of window.bookedHotels
+        const userHotels = UserTrips.getTrips('hotels');
+        const isBooked = userHotels.some(
+          bookedHotel => bookedHotel.name === hotel.name && bookedHotel.location === hotel.location
+        );
+        
+        const hotelCard = document.createElement('div');
+        hotelCard.className = isBooked ? 'hotel-card booked-hotel' : 'hotel-card';
+        
+        // Create star rating HTML
+        const starRating = Array(5).fill(0).map((_, i) => 
+          i < hotel.stars ? '★' : '☆'
+        ).join('');
+        
+        // Create amenities list
+        const amenitiesList = hotel.amenities.map(item => `<span class="amenity">${item}</span>`).join('');
+        
+        hotelCard.innerHTML = `
+          <div class="hotel-image">
+            <img src="${hotel.image}" alt="${hotel.name}" />
+            ${hotel.discount ? `<div class="discount-tag">${hotel.discount}% OFF</div>` : ''}
+            ${isBooked ? `<div class="booked-tag">BOOKED</div>` : ''}
+          </div>
+          <div class="hotel-details">
+            <div class="hotel-info">
+              <h3>${hotel.name}</h3>
+              <div class="hotel-rating">
+                <div class="stars">${starRating}</div>
+                <div class="review-score">${hotel.rating}/5 (${hotel.reviews} reviews)</div>
+              </div>
+              <p class="location">${hotel.location}</p>
+              <div class="amenities-section">
+                ${amenitiesList}
+              </div>
+            </div>
+            <div class="hotel-price">
+              <div class="price">
+                <h3>₹${hotel.price}</h3>
+                ${hotel.originalPrice ? `<span class="original-price">₹${hotel.originalPrice}</span>` : ''}
+                <p>per night</p>
+              </div>
+              <button class="book-btn ${isBooked ? 'booked' : ''}" 
+                      ${isBooked ? 'disabled' : `onclick="confirmHotelBooking('${hotel.name}', ${hotel.price}, '${hotel.location}', '${hotel.image}', ${hotel.stars})"`}>
+                ${isBooked ? 'Booked' : 'Book Now'}
+              </button>
+            </div>
+          </div>
+        `;
+        
+        hotelsList.appendChild(hotelCard);
+      });
+      
+      // Show message if no hotels found
+      if (filteredHotels.length === 0) {
+        const noHotels = document.createElement('div');
+        noHotels.className = 'no-flights';
+        noHotels.innerHTML = `
+          <img src="images/no-results.svg" alt="No hotels found" />
+          <h4>No hotels found</h4>
+          <p>Try adjusting your filters or changing your dates.</p>
+        `;
+        hotelsList.appendChild(noHotels);
+      }
+    }
+    
+    function displayBookedHotels() {
+      // Get user-specific booked hotels
+      const userHotels = UserTrips.getTrips('hotels');
+      
+      // Check if there are any booked hotels
+      if (!userHotels || userHotels.length === 0) {
+        return;
+      }
+      
+      // Create booked hotels section if it doesn't exist
+      let bookedHotelsSection = document.getElementById('booked-hotels-section');
+      if (!bookedHotelsSection) {
+        bookedHotelsSection = document.createElement('section');
+        bookedHotelsSection.id = 'booked-hotels-section';
+        bookedHotelsSection.className = 'destinations booked-hotels';
+        document.querySelector('.destinations').after(bookedHotelsSection);
+      }
+      
+      // Clear existing content
+      bookedHotelsSection.innerHTML = '';
+      
+      // Create header for booked hotels
+      const header = document.createElement('h2');
+      header.textContent = 'Your Booked Hotels';
+      bookedHotelsSection.appendChild(header);
+      
+      // Display count
+      const bookedCount = document.createElement('p');
+      bookedCount.className = 'results-count';
+      bookedCount.textContent = `${userHotels.length} booked hotels`;
+      bookedHotelsSection.appendChild(bookedCount);
+      
+      // Create container for booked hotels
+      const bookedHotelsList = document.createElement('div');
+      bookedHotelsList.id = 'booked-hotels-list';
+      bookedHotelsSection.appendChild(bookedHotelsList);
+      
+      // Display each booked hotel
+      userHotels.forEach(hotel => {
+        const hotelCard = document.createElement('div');
+        hotelCard.className = 'hotel-card booked-hotel';
+        
+        // Create star rating HTML
+        const starRating = Array(5).fill(0).map((_, i) => 
+          i < hotel.stars ? '★' : '☆'
+        ).join('');
+        
+        hotelCard.innerHTML = `
+          <div class="hotel-image">
+            <img src="${hotel.image}" alt="${hotel.name}" />
+            <div class="booked-tag">BOOKED</div>
+          </div>
+          <div class="hotel-details">
+            <div class="hotel-info">
+              <h3>${hotel.name}</h3>
+              <div class="hotel-rating">
+                <div class="stars">${starRating}</div>
+              </div>
+              <p class="location">${hotel.location}</p>
+              <div class="booking-details">
+                <p><strong>Booking ID:</strong> ${hotel.bookingId}</p>
+                <p><strong>Check-in:</strong> ${formatDate(hotel.checkInDate)}</p>
+                <p><strong>Check-out:</strong> ${formatDate(hotel.checkOutDate)}</p>
+                <p><strong>Guests:</strong> ${hotel.guests} | <strong>Nights:</strong> ${hotel.nights}</p>
+              </div>
+            </div>
+            <div class="hotel-price">
+              <div class="price">
+                <h3>₹${hotel.totalPrice}</h3>
+                <p>total price</p>
+              </div>
+              <div class="booking-date">${formatDate(hotel.bookingDate)}</div>
+            </div>
+          </div>
+        `;
+        
+        bookedHotelsList.appendChild(hotelCard);
+      });
+    }
+    
+    function confirmHotelBooking(hotelName, price, location, image, stars) {
+      // Check if user is logged in
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        alert('You need to be logged in to book a hotel');
+        window.location.href = 'new.html';
+        return;
+      }
+      
+      // Create confirmation alert if it doesn't exist
+      if (!document.getElementById('booking-confirmation-alert')) {
+        const confirmationAlert = document.createElement('div');
+        confirmationAlert.id = 'booking-confirmation-alert';
+        confirmationAlert.className = 'booking-confirmation-alert';
+        
+        confirmationAlert.innerHTML = `
+          <div class="confirmation-alert-content">
+            <div class="confirmation-alert-header">
+              <h3>Confirm Your Booking</h3>
+              <span class="close-alert" onclick="closeConfirmationAlert()">&times;</span>
+            </div>
+            <div class="confirmation-alert-body">
+              <div id="hotel-booking-details"></div>
+              <div class="booking-options">
+                <div class="booking-row">
+                  <label>Number of Guests:</label>
+                  <div class="booking-counter">
+                    <button type="button" onclick="updateGuestCount(-1)">-</button>
+                    <span id="booking-guests-count">2</span>
+                    <button type="button" onclick="updateGuestCount(1)">+</button>
+                  </div>
+                </div>
+                <div class="booking-row">
+                  <label>Number of Nights:</label>
+                  <div class="booking-counter">
+                    <button type="button" onclick="updateNightsCount(-1)">-</button>
+                    <span id="booking-nights-count">1</span>
+                    <button type="button" onclick="updateNightsCount(1)">+</button>
+                  </div>
+                </div>
+              </div>
+              <div class="price-details">
+                <div class="detail-row">
+                  <span>Price per night:</span>
+                  <span>₹<span id="price-per-night"></span></span>
+                </div>
+                <div class="detail-row">
+                  <span>Nights:</span>
+                  <span id="nights-count"></span>
+                </div>
+                <div class="detail-row">
+                  <span>Taxes (18%):</span>
+                  <span>₹<span id="taxes-amount"></span></span>
+                </div>
+                <div class="detail-row total">
+                  <span>Total Price:</span>
+                  <span>₹<span id="total-price"></span></span>
+                </div>
+              </div>
+            </div>
+            <div class="confirmation-alert-footer">
+              <button class="cancel-booking-btn" onclick="closeConfirmationAlert()">Cancel</button>
+              <button class="confirm-booking-btn" onclick="processHotelBooking()">Confirm Booking</button>
+            </div>
+          </div>
+        `;
+        
+        document.body.appendChild(confirmationAlert);
+      }
+      
+      // Set confirmation alert data
+      const confirmationAlert = document.getElementById('booking-confirmation-alert');
+      confirmationAlert.setAttribute('data-hotel-name', hotelName);
+      confirmationAlert.setAttribute('data-price', price);
+      confirmationAlert.setAttribute('data-location', location);
+      confirmationAlert.setAttribute('data-image', image);
+      confirmationAlert.setAttribute('data-stars', stars);
+      
+      // Update hotel details in the alert
+      const hotelDetails = document.getElementById('hotel-booking-details');
+      hotelDetails.innerHTML = `
+        <div class="hotel-preview">
+          <img src="${image}" alt="${hotelName}" />
+          <div>
+            <h4>${hotelName}</h4>
+            <p>${location}</p>
+          </div>
+        </div>
+      `;
+      
+      // Set initial values
+      document.getElementById('booking-guests-count').textContent = 2;
+      document.getElementById('booking-nights-count').textContent = 1;
+      
+      // Update price calculations
+      updateHotelPrice(price);
+      
+      // Show the confirmation alert
+      confirmationAlert.style.display = 'flex';
+      setTimeout(() => {
+        confirmationAlert.classList.add('show');
+      }, 10);
+    }
+    
+    function closeConfirmationAlert() {
+      const confirmationAlert = document.getElementById('booking-confirmation-alert');
+      if (confirmationAlert) {
+        confirmationAlert.classList.remove('show');
+        setTimeout(() => {
+          confirmationAlert.style.display = 'none';
+        }, 300);
+      }
+    }
+    
+    function updateGuestCount(change) {
+      const guestsElement = document.getElementById('booking-guests-count');
+      let guests = parseInt(guestsElement.textContent) + change;
+      
+      // Set limits
+      guests = Math.max(1, Math.min(guests, 10));
+      
+      guestsElement.textContent = guests;
+    }
+    
+    function updateNightsCount(change) {
+      const nightsElement = document.getElementById('booking-nights-count');
+      let nights = parseInt(nightsElement.textContent) + change;
+      
+      // Set limits
+      nights = Math.max(1, Math.min(nights, 30));
+      
+      nightsElement.textContent = nights;
+      
+      // Update price calculations
+      const confirmationAlert = document.getElementById('booking-confirmation-alert');
+      const price = parseInt(confirmationAlert.getAttribute('data-price'));
+      updateHotelPrice(price);
+    }
+    
+    function updateHotelPrice(price) {
+      const nights = parseInt(document.getElementById('booking-nights-count').textContent);
+      
+      // Calculate totals
+      const baseTotal = price * nights;
+      const taxes = Math.round(baseTotal * 0.18);
+      const totalPrice = baseTotal + taxes;
+      
+      // Update UI
+      document.getElementById('price-per-night').textContent = price;
+      document.getElementById('nights-count').textContent = nights;
+      document.getElementById('taxes-amount').textContent = taxes;
+      document.getElementById('total-price').textContent = totalPrice;
+    }
+    
+    function processHotelBooking() {
+      // Check if user is logged in
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        alert('You need to be logged in to book a hotel');
+        window.location.href = 'new.html';
+        return;
+      }
+      
+      const confirmationAlert = document.getElementById('booking-confirmation-alert');
+      
+      // Get hotel details
+      const hotelName = confirmationAlert.getAttribute('data-hotel-name');
+      const price = parseInt(confirmationAlert.getAttribute('data-price'));
+      const location = confirmationAlert.getAttribute('data-location');
+      const image = confirmationAlert.getAttribute('data-image');
+      const stars = parseInt(confirmationAlert.getAttribute('data-stars'));
+      
+      // Get booking details
+      const guests = parseInt(document.getElementById('booking-guests-count').textContent);
+      const nights = parseInt(document.getElementById('booking-nights-count').textContent);
+      const totalPrice = parseInt(document.getElementById('total-price').textContent);
+      
+      // Generate check-in and check-out dates
+      const checkInDate = new Date();
+      const checkOutDate = new Date();
+      checkOutDate.setDate(checkOutDate.getDate() + nights);
+      
+      // Create booking object
+      const booking = {
+        name: hotelName,
+        location: location,
+        price: price,
+        stars: stars,
+        image: image,
+        guests: guests,
+        nights: nights,
+        totalPrice: totalPrice,
+        checkInDate: checkInDate.toISOString().split('T')[0],
+        checkOutDate: checkOutDate.toISOString().split('T')[0],
+        bookingDate: new Date().toISOString()
+      };
+      
+      // Save using user-specific storage
+      const saved = UserTrips.saveTrip('hotels', booking);
+      
+      if (saved) {
+        // Close confirmation alert
+        closeConfirmationAlert();
+        
+        // Show success message
+        showBookingSuccess(`Your booking at ${hotelName} has been confirmed!`);
+        
+        // Refresh the hotel lists
+        displayHotels('Popular Destinations', '2023-12-20', '2023-12-25');
+        displayBookedHotels();
+      } else {
+        alert('There was a problem saving your booking. Please try again.');
+      }
+    }
+    
+    function showBookingSuccess(message) {
+      // Create success message if it doesn't exist
+      if (!document.getElementById('booking-success')) {
+        const successMessage = document.createElement('div');
+        successMessage.id = 'booking-success';
+        successMessage.className = 'booking-success';
+        
+        successMessage.innerHTML = `
+          <div class="success-content">
+            <div class="success-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+              </svg>
+            </div>
+            <div id="success-message"></div>
+          </div>
+        `;
+        
+        document.body.appendChild(successMessage);
+      }
+      
+      // Set message
+      document.getElementById('success-message').textContent = message;
+      
+      // Show success message
+      const successElement = document.getElementById('booking-success');
+      successElement.style.display = 'flex';
+      setTimeout(() => {
+        successElement.classList.add('show');
+      }, 10);
+      
+      // Hide after 3 seconds
+      setTimeout(() => {
+        successElement.classList.remove('show');
+        setTimeout(() => {
+          successElement.style.display = 'none';
+        }, 300);
+      }, 3000);
+    }
+    
+    function generateBookingId() {
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      const numbers = '0123456789';
+      let id = 'HB';
+      
+      // Add 2 random letters
+      for (let i = 0; i < 2; i++) {
+        id += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      
+      id += '-';
+      
+      // Add 6 random numbers
+      for (let i = 0; i < 6; i++) {
+        id += numbers.charAt(Math.floor(Math.random() * numbers.length));
+      }
+      
+      return id;
+    }
+    
+    function formatDate(dateString) {
+      const options = { year: 'numeric', month: 'short', day: 'numeric' };
+      return new Date(dateString).toLocaleDateString('en-US', options);
+    }
+    
+    // Handle background image change
+    window.onload = function() {
+      const banner = document.querySelector('.banner');
+      banner.style.backgroundImage = 'url("https://images.unsplash.com/photo-1564501049412-61c2a3083791?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1920")';
+      banner.style.backgroundSize = 'cover';
+      banner.style.backgroundPosition = 'center';
+    };
+  </script>
+
+  <style>
+    /* Back to Home Button */
+    .back-home-btn {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.9);
+      color: var(--primary);
+      padding: 10px 18px;
+      border-radius: var(--radius-full);
+      box-shadow: var(--shadow-md);
+      z-index: var(--z-top);
+      transition: all var(--transition-normal);
+      font-weight: 500;
+      font-size: 15px;
+    }
+    
+    .back-home-btn:hover {
+      background: var(--primary);
+      color: white;
+      transform: translateX(-5px);
+      box-shadow: var(--shadow-lg);
+    }
+    
+    .back-home-btn svg {
+      width: 16px;
+      height: 16px;
+    }
+    
+    /* Hotel-specific styles */
+    .hotel-card {
+      background: white;
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow-md);
+      transition: all var(--transition-normal);
+      display: flex;
+      flex-direction: row;
+    }
+    
+    .hotel-card:hover {
+      transform: translateY(-5px);
+      box-shadow: var(--shadow-lg);
+    }
+    
+    .hotel-image {
+      width: 30%;
+      position: relative;
+    }
+    
+    .hotel-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    
+    .discount-tag {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: var(--primary);
+      color: white;
+      padding: 5px 10px;
+      border-radius: var(--radius-md);
+      font-weight: 600;
+      font-size: 0.8rem;
+    }
+    
+    .booked-tag {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      background: var(--secondary);
+      color: white;
+      padding: 5px 10px;
+      border-radius: var(--radius-md);
+      font-weight: 600;
+      font-size: 0.8rem;
+    }
+    
+    .hotel-details {
+      padding: 20px;
+      display: flex;
+      flex: 1;
+      justify-content: space-between;
+    }
+    
+    .hotel-info {
+      flex: 1;
+    }
+    
+    .hotel-info h3 {
+      margin-bottom: 5px;
+      color: var(--text-dark);
+    }
+    
+    .hotel-rating {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    
+    .stars {
+      color: gold;
+      letter-spacing: 2px;
+    }
+    
+    .review-score {
+      font-size: 0.9rem;
+      color: var(--text-medium);
+    }
+    
+    .location {
+      color: var(--text-medium);
+      margin-bottom: 10px;
+    }
+    
+    .hotel-price {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      justify-content: space-between;
+      min-width: 150px;
+    }
+    
+    .price {
+      text-align: right;
+    }
+    
+    .price h3 {
+      margin-bottom: 0;
+      color: var(--primary);
+    }
+    
+    .original-price {
+      text-decoration: line-through;
+      color: var(--text-light);
+      font-size: 0.9rem;
+    }
+    
+    .price p {
+      margin: 0;
+      font-size: 0.8rem;
+      color: var(--text-light);
+    }
+    
+    .amenities-section {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+    
+    /* Make book button consistent with updated train styling */
+    .book-btn {
+      background: linear-gradient(45deg, var(--primary-dark), var(--primary));
+      color: white;
+      border: none;
+      padding: 8px 15px;
+      border-radius: var(--radius-md);
+      font-weight: 500;
+      box-shadow: var(--shadow-sm);
+    }
+    
+    .book-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+    
+    .book-btn.booked {
+      background: var(--secondary);
+      cursor: not-allowed;
+    }
+    
+    @media (max-width: 768px) {
+      .hotel-card {
+        flex-direction: column;
+      }
+      
+      .hotel-image {
+        width: 100%;
+        height: 200px;
+      }
+      
+      .hotel-details {
+        flex-direction: column;
+      }
+      
+      .hotel-price {
+        align-items: flex-start;
+        margin-top: 15px;
+      }
+    }
+    
+    /* Add new simplified banner style */
+    .simplified-banner {
+      height: 40vh;
+      min-height: 300px;
+    }
+
+    /* Enhanced Filter Styling */
+    .filter-sort-container {
+      background: rgba(255, 255, 255, 0.8);
+      border-radius: var(--radius-lg);
+      padding: 15px 20px;
+      box-shadow: var(--shadow-md);
+      margin-bottom: 30px;
+      border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    
+    .filter-sort-container h2 {
+      margin-bottom: 15px;
+      font-size: 1.5rem;
+      color: var(--text-dark);
+      position: relative;
+      display: inline-block;
+    }
+    
+    .filter-sort-container h2::after {
+      content: '';
+      position: absolute;
+      bottom: -5px;
+      left: 0;
+      width: 40%;
+      height: 2px;
+      background: linear-gradient(90deg, var(--primary), transparent);
+      border-radius: var(--radius-full);
+    }
+    
+    .flight-filters {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      align-items: flex-end;
+    }
+    
+    .filter {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-width: 180px;
+      flex-grow: 1;
+    }
+    
+    .filter label {
+      font-size: 0.85rem;
+      color: var(--text-medium);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    
+    .filter select {
+      padding: 10px 35px 10px 15px;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      background: white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%234a5568' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") no-repeat right 10px center;
+      background-size: 16px;
+      color: var(--text-dark);
+      font-size: 0.95rem;
+      appearance: none;
+      cursor: pointer;
+      transition: all var(--transition-normal);
+      box-shadow: var(--shadow-sm);
+    }
+    
+    .filter select:hover {
+      border-color: var(--primary-light);
+      box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1);
+    }
+    
+    .filter select:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.2);
+    }
+    
+  
+    .filter select option {
+      padding: 10px;
+      font-size: 0.95rem;
+    }
+    
+    
+    #price-filter {
+      border-left: 3px solid var(--primary);
+    }
+    
+    #star-filter {
+      border-left: 3px solid var(--secondary);
+    }
+    
+    #sort-option {
+      border-left: 3px solid #a7ffd6; 
+    }
+    
+    
+    .results-count {
+      background: rgba(255, 255, 255, 0.7);
+      padding: 8px 15px;
+      border-radius: var(--radius-full);
+      color: var(--text-medium);
+      font-size: 0.9rem;
+      font-weight: 500;
+      display: inline-block;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow-sm);
+    }
+    
+    
+    .booking-confirmation-alert {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: var(--z-top);
+      transition: all var(--transition-normal);
+    }
+    
+    .booking-confirmation-alert.show {
+      display: flex;
+    }
+    
+    .confirmation-alert-content {
+      background: white;
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      width: 90%;
+      max-width: 500px;
+      box-shadow: var(--shadow-lg);
+      animation: fadeIn var(--transition-normal);
+    }
+    
+    .confirmation-alert-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    
+    .confirmation-alert-header h3 {
+      margin: 0;
+      font-size: 1.5rem;
+      color: var(--text-dark);
+    }
+    
+    .close-alert {
+      cursor: pointer;
+      font-size: 1.5rem;
+      color: var(--text-light);
+    }
+    
+    .confirmation-alert-body {
+      margin-bottom: 20px;
+    }
+    
+    .hotel-preview {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    
+    .hotel-preview img {
+      width: 60px;
+      height: 60px;
+      border-radius: var(--radius-md);
+      object-fit: cover;
+    }
+    
+    .booking-options {
+      margin-bottom: 20px;
+    }
+    
+    .booking-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    
+    .booking-counter {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .booking-counter button {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+    }
+    
+    .price-details {
+      background: rgba(0, 0, 0, 0.05);
+      padding: 10px;
+      border-radius: var(--radius-md);
+    }
+    
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 5px;
+    }
+    
+    .detail-row.total {
+      font-weight: 600;
+      color: var(--primary);
+    }
+    
+    .confirmation-alert-footer {
+      display: flex;
+      justify-content: space-between;
+    }
+    
+    .cancel-booking-btn,
+    .confirm-booking-btn {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+    }
+    
+    .cancel-booking-btn {
+      background: var(--secondary);
+    }
+    
+    
+    .booking-success {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: var(--z-top);
+      transition: all var(--transition-normal);
+    }
+    
+    .booking-success.show {
+      display: flex;
+    }
+    
+    .success-content {
+      background: white;
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      width: 90%;
+      max-width: 400px;
+      box-shadow: var(--shadow-lg);
+      text-align: center;
+      animation: fadeIn var(--transition-normal);
+    }
+    
+    .success-icon {
+      margin-bottom: 10px;
+    }
+    
+    .success-icon svg {
+      width: 50px;
+      height: 50px;
+      color: var(--primary);
+    }
+    
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: scale(0.9);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+  </style>
+</body>
+</html>

@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Your Trips</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="js/user-trips.js"></script>
+</head>
+<body>
+
+
+
+  <!-- Back to Home Button -->
+  <a href="new.html" class="back-home-btn">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M19 12H5"></path>
+      <path d="M12 19l-7-7 7-7"></path>
+    </svg>
+    <span>Home</span>
+  </a>
+  
+
+
+  <!-- Simplified Header -->
+  <header class="flights-header">
+    <h1 class="flight-title">Your Trips</h1>
+  </header>
+
+  <!-- Banner Section - Simplified -->
+  <section class="banner simplified-banner">
+    <div class="banner-content">
+      <h1>Manage Your Travel Plans</h1>
+    </div>
+  </section>
+
+  <!-- Destination Image Carousel - NEW SECTION -->
+  <section class="destination-carousel">
+    <h2>Popular Destinations</h2>
+    <div class="image-slider-container">
+      <div class="image-slider">
+        <!-- Tokyo images -->
+        <div class="slider-item">
+          <img src="https://images.unsplash.com/photo-1503899036084-c55cdd92da26?auto=format&fit=crop&w=800&h=400" alt="Tokyo Skyline with Mount Fuji" />
+          <div class="slider-caption">Tokyo Skyline</div>
+        </div>
+        <div class="slider-item">
+          <img src="https://images.unsplash.com/photo-1536098561742-ca998e48cbcc?auto=format&fit=crop&w=800&h=400" alt="Tokyo Streets at Night" />
+          <div class="slider-caption">Tokyo Night Life</div>
+        </div>
+        <div class="slider-item">
+          <img src="https://images.unsplash.com/photo-1524413840807-0c3cb6fa808d?auto=format&fit=crop&w=800&h=400" alt="Cherry Blossoms in Tokyo" />
+          <div class="slider-caption">Tokyo Cherry Blossoms</div>
+        </div>
+        <!-- Other cities -->
+        <div class="slider-item">
+          <img src="https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=800&h=400" alt="Paris" />
+          <div class="slider-caption">Paris</div>
+        </div>
+        <div class="slider-item">
+          <img src="https://images.unsplash.com/photo-1538970272646-f61fabb3a8a2?auto=format&fit=crop&w=800&h=400" alt="New York" />
+          <div class="slider-caption">New York</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Trip Summary Section -->
+  <section class="destinations">
+    <div class="filter-sort-container">
+      <h2>Your Upcoming Trips</h2>
+      <div class="trip-overview" id="trip-overview">
+        <!-- Summary statistics will be shown here -->
+      </div>
+    </div>
+    
+    <!-- Trip Details Section -->
+    <div id="trips-container">
+      <!-- Each trip will be displayed here -->
+    </div>
+    
+    <!-- Empty State -->
+    <div id="empty-trips" style="display: none;">
+      <div class="empty-state">
+        <img src="https://images.unsplash.com/photo-1536940385103-c729049165e6?auto=format&fit=crop&w=300&h=300" alt="No trips" />
+        <h3>No trips found</h3>
+        <p>You haven't booked any trips yet. Start planning your next adventure!</p>
+        <div class="empty-actions">
+          <a href="flights.html" class="action-btn">Book Flight</a>
+          <a href="hotels.html" class="action-btn">Book Hotel</a>
+          <a href="trains.html" class="action-btn">Book Train</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    made by jyot and mahin
+  </footer>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Check if user is logged in
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        // Redirect to login or show message
+        document.getElementById('empty-trips').style.display = 'block';
+        document.getElementById('empty-trips').innerHTML = `
+          <div class="empty-state">
+            <img src="https://images.unsplash.com/photo-1536940385103-c729049165e6?auto=format&fit=crop&w=300&h=300" alt="Not logged in" />
+            <h3>Please log in to view your trips</h3>
+            <p>You need to be logged in to view and manage your travel plans.</p>
+            <div class="empty-actions">
+              <a href="new.html" class="action-btn">Go to Login</a>
+            </div>
+          </div>
+        `;
+        return;
+      }
+      
+      // Get username to personalize the page
+      const username = UserTrips.getCurrentUsername();
+      if (username) {
+        const titleElement = document.querySelector('.flight-title');
+        if (titleElement) {
+          titleElement.textContent = `${username}'s Trips`;
+        }
+      }
+      
+      // Flag for first-time migration if needed
+      if (!localStorage.getItem('migrationChecked')) {
+        localStorage.setItem('needsMigration', 'true');
+        localStorage.setItem('migrationChecked', 'true');
+      }
+      
+      // Load user-specific bookings directly from UserTrips
+      const bookedFlights = UserTrips.getTrips('flights');
+      const bookedHotels = UserTrips.getTrips('hotels');
+      const bookedTrains = UserTrips.getTrips('trains');
+      
+      console.log(`Loaded ${bookedFlights.length} flights, ${bookedHotels.length} hotels, and ${bookedTrains.length} trains`);
+      
+      // Group bookings by destination and date to form "trips"
+      const trips = organizeTrips(bookedFlights, bookedHotels, bookedTrains);
+      
+      // Display trip overview
+      displayTripOverview(bookedFlights, bookedHotels, bookedTrains);
+      
+      // Display trips
+      displayTrips(trips);
+      
+      // Initialize image slider
+      initImageSlider();
+    });
+    
+    function initImageSlider() {
+      const slider = document.querySelector('.image-slider');
+      let isDown = false;
+      let startX;
+      let scrollLeft;
+      
+      // Clone the slider items for infinite scroll effect
+      const items = document.querySelectorAll('.slider-item');
+      items.forEach(item => {
+        const clone = item.cloneNode(true);
+        slider.appendChild(clone);
+      });
+      
+      // Auto scroll function
+      let scrollInterval = setInterval(() => {
+        slider.scrollLeft += 2;
+        
+        // Reset when we reach the end
+        if (slider.scrollLeft >= (slider.scrollWidth / 2)) {
+          slider.scrollLeft = 0;
+        }
+      }, 30);
+      
+      // Pause auto scroll on hover
+      slider.addEventListener('mouseenter', () => {
+        clearInterval(scrollInterval);
+      });
+      
+      // Resume auto scroll when mouse leaves
+      slider.addEventListener('mouseleave', () => {
+        scrollInterval = setInterval(() => {
+          slider.scrollLeft += 2;
+          
+          // Reset when we reach the end
+          if (slider.scrollLeft >= (slider.scrollWidth / 2)) {
+            slider.scrollLeft = 0;
+          }
+        }, 30);
+      });
+      
+      // Mouse controls for manual scrolling
+      slider.addEventListener('mousedown', (e) => {
+        isDown = true;
+        slider.classList.add('active');
+        startX = e.pageX - slider.offsetLeft;
+        scrollLeft = slider.scrollLeft;
+      });
+      
+      slider.addEventListener('mouseleave', () => {
+        isDown = false;
+        slider.classList.remove('active');
+      });
+      
+      slider.addEventListener('mouseup', () => {
+        isDown = false;
+        slider.classList.remove('active');
+      });
+      
+      slider.addEventListener('mousemove', (e) => {
+        if (!isDown) return;
+        e.preventDefault();
+        const x = e.pageX - slider.offsetLeft;
+        const walk = (x - startX) * 2; // Scroll speed
+        slider.scrollLeft = scrollLeft - walk;
+      });
+    }
+    
+    function organizeTrips(flights, hotels, trains) {
+      const allTrips = [];
+      
+      console.log(`Organizing trips from: ${flights.length} flights, ${hotels.length} hotels, ${trains.length} trains`);
+      
+      // Process flights
+      flights.forEach(flight => {
+        const departureDate = new Date(flight.bookingDate);
+        const monthYear = `${departureDate.getMonth()+1}-${departureDate.getFullYear()}`;
+        const tripKey = `${flight.from}-${flight.to}-${monthYear}`;
+        
+        let trip = allTrips.find(t => t.id === tripKey);
+        
+        if (!trip) {
+          trip = {
+            id: tripKey,
+            origin: flight.from,
+            destination: flight.to,
+            date: departureDate,
+            flights: [],
+            hotels: [],
+            trains: [],
+            totalPrice: 0
+          };
+          allTrips.push(trip);
+        }
+        
+        trip.flights.push(flight);
+        trip.totalPrice += parseInt(flight.totalPrice);
+      });
+      
+      // Process hotels - improved logging for debugging
+      console.log("Processing hotels:", hotels);
+      hotels.forEach(hotel => {
+        try {
+          const hotelDate = new Date(hotel.bookingDate || hotel.checkInDate || new Date().toISOString());
+          const monthYear = `${hotelDate.getMonth()+1}-${hotelDate.getFullYear()}`;
+          
+          console.log(`Processing hotel: ${hotel.name}, location: ${hotel.location}, date: ${hotelDate}`);
+          
+          let matchingTrip = allTrips.find(trip => 
+            (trip.destination === hotel.location || trip.origin === hotel.location) && 
+            Math.abs(trip.date.getMonth() - hotelDate.getMonth()) <= 1 &&
+            trip.date.getFullYear() === hotelDate.getFullYear()
+          );
+          
+          console.log(`Found matching trip: ${matchingTrip ? 'Yes' : 'No'}`);
+          
+          if (matchingTrip) {
+            matchingTrip.hotels.push(hotel);
+            matchingTrip.totalPrice += parseInt(hotel.totalPrice || hotel.price || 0);
+          } else {
+            const tripKey = `hotel-${hotel.location}-${monthYear}`;
+            const newTrip = {
+              id: tripKey,
+              origin: "Home",
+              destination: hotel.location,
+              date: hotelDate,
+              flights: [],
+              hotels: [hotel],
+              trains: [],
+              totalPrice: parseInt(hotel.totalPrice || hotel.price || 0)
+            };
+            allTrips.push(newTrip);
+            console.log(`Created new trip for hotel: ${hotel.name} in ${hotel.location}`);
+          }
+        } catch (error) {
+          console.error(`Error processing hotel ${hotel.name}:`, error);
+        }
+      });
+      
+      // Process trains
+      trains.forEach(train => {
+        const trainDate = new Date(train.bookingDate);
+        const monthYear = `${trainDate.getMonth()+1}-${trainDate.getFullYear()}`;
+        
+        let matchingTrip = allTrips.find(trip => 
+          ((trip.destination === train.to && trip.origin === train.from) ||
+           (trip.origin === train.to && trip.destination === train.from)) &&
+          Math.abs(trip.date.getMonth() - trainDate.getMonth()) <= 1 &&
+          trip.date.getFullYear() === trainDate.getFullYear()
+        );
+        
+        if (matchingTrip) {
+          matchingTrip.trains.push(train);
+          matchingTrip.totalPrice += parseInt(train.totalPrice);
+        } else {
+          const tripKey = `train-${train.from}-${train.to}-${monthYear}`;
+          const newTrip = {
+            id: tripKey,
+            origin: train.from,
+            destination: train.to,
+            date: trainDate,
+            flights: [],
+            hotels: [],
+            trains: [train],
+            totalPrice: parseInt(train.totalPrice)
+          };
+          allTrips.push(newTrip);
+        }
+      });
+      
+      allTrips.sort((a, b) => b.date - a.date);
+      
+      console.log(`Organized ${allTrips.length} trips`);
+      return allTrips;
+    }
+    
+    function displayTripOverview(flights, hotels, trains) {
+      const overviewElement = document.getElementById('trip-overview');
+      
+      const totalBookings = flights.length + hotels.length + trains.length;
+      
+      let totalSpending = 0;
+      flights.forEach(flight => totalSpending += parseInt(flight.totalPrice));
+      hotels.forEach(hotel => totalSpending += parseInt(hotel.totalPrice));
+      trains.forEach(train => totalSpending += parseInt(train.totalPrice));
+      
+      const destinations = new Set();
+      flights.forEach(flight => {
+        destinations.add(flight.from);
+        destinations.add(flight.to);
+      });
+      hotels.forEach(hotel => destinations.add(hotel.location));
+      trains.forEach(train => {
+        destinations.add(train.from);
+        destinations.add(train.to);
+      });
+      
+      overviewElement.innerHTML = `
+        <div class="overview-cards">
+          <div class="overview-card">
+            <div class="overview-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+              </svg>
+            </div>
+            <div class="overview-details">
+              <h3>${totalBookings}</h3>
+              <p>Total Bookings</p>
+            </div>
+          </div>
+          
+          <div class="overview-card">
+            <div class="overview-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12" y2="16"></line>
+              </svg>
+            </div>
+            <div class="overview-details">
+              <h3>${destinations.size}</h3>
+              <p>Destinations</p>
+            </div>
+          </div>
+          
+          <div class="overview-card">
+            <div class="overview-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+              </svg>
+            </div>
+            <div class="overview-details">
+              <h3>₹${totalSpending}</h3>
+              <p>Total Spending</p>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+    
+    function displayTrips(trips) {
+      const tripsContainer = document.getElementById('trips-container');
+      const emptyTripsElement = document.getElementById('empty-trips');
+      
+      if (trips.length === 0) {
+        emptyTripsElement.style.display = 'block';
+        return;
+      }
+      
+      tripsContainer.innerHTML = '';
+      
+      console.log(`Displaying ${trips.length} trips`);
+      
+      trips.forEach((trip, index) => {
+        const tripCard = document.createElement('div');
+        tripCard.className = 'trip-card';
+        
+        const formattedDate = formatDate(trip.date);
+        
+        let flightItems = '';
+        if (trip.flights.length > 0) {
+          flightItems = `
+            <div class="trip-section">
+              <h4>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M22 2L11 13"></path>
+                  <path d="M22 2L15 22L11 13L2 9L22 2Z"></path>
+                </svg>
+                Flights (${trip.flights.length})
+              </h4>
+              ${trip.flights.map(flight => `
+                <div class="booking-item">
+                  <div class="booking-details">
+                    <span class="booking-title">${flight.airline} - ${flight.flightNumber}</span>
+                    <div class="booking-route">
+                      <span>${flight.from}</span>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M5 12h14"></path>
+                        <path d="M12 5l7 7-7 7"></path>
+                      </svg>
+                      <span>${flight.to}</span>
+                    </div>
+                    <div class="booking-meta">
+                      <span class="booking-time">${flight.departureTime} - ${flight.arrivalTime}</span>
+                      <span class="booking-date">${formatDate(flight.bookingDate)}</span>
+                    </div>
+                  </div>
+                  <div class="booking-actions">
+                    <div class="booking-price">₹${flight.totalPrice}</div>
+                    <button class="delete-btn" onclick="deleteBooking('flights', '${flight.bookingId}')">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 6h18"></path>
+                        <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"></path>
+                        <line x1="10" y1="11" x2="10" y2="17"></line>
+                        <line x1="14" y1="11" x2="14" y2="17"></line>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          `;
+        }
+        
+        let hotelItems = '';
+        if (trip.hotels.length > 0) {
+          hotelItems = `
+            <div class="trip-section">
+              <h4>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M3 14h18v7H3z"></path>
+                  <path d="M21 7V4H3v3"></path>
+                  <path d="M21 14V7H3v7"></path>
+                  <path d="M9 14v7"></path>
+                  <path d="M9 4v7"></path>
+                </svg>
+                Accommodations (${trip.hotels.length})
+              </h4>
+              ${trip.hotels.map(hotel => `
+                <div class="booking-item">
+                  <div class="booking-details">
+                    <span class="booking-title">${hotel.name}</span>
+                    <div class="booking-location">${hotel.location}</div>
+                    <div class="booking-meta">
+                      <span class="booking-time">${formatDate(hotel.checkInDate)} - ${formatDate(hotel.checkOutDate)}</span>
+                      <span class="booking-guests">${hotel.guests} guests · ${hotel.nights} nights</span>
+                    </div>
+                  </div>
+                  <div class="booking-actions">
+                    <div class="booking-price">₹${hotel.totalPrice}</div>
+                    <button class="delete-btn" onclick="deleteBooking('hotels', '${hotel.bookingId}')">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 6h18"></path>
+                        <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"></path>
+                        <line x1="10" y1="11" x2="10" y2="17"></line>
+                        <line x1="14" y1="11" x2="14" y2="17"></line>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          `;
+        }
+        
+        let trainItems = '';
+        if (trip.trains.length > 0) {
+          trainItems = `
+            <div class="trip-section">
+              <h4>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect>
+                  <path d="M4 12h16"></path>
+                  <path d="M12 4v16"></path>
+                </svg>
+                Trains (${trip.trains.length})
+              </h4>
+              ${trip.trains.map(train => `
+                <div class="booking-item">
+                  <div class="booking-details">
+                    <span class="booking-title">${train.name} - #${train.number}</span>
+                    <div class="booking-route">
+                      <span>${train.from}</span>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M5 12h14"></path>
+                        <path d="M12 5l7 7-7 7"></path>
+                      </svg>
+                      <span>${train.to}</span>
+                    </div>
+                    <div class="booking-meta">
+                      <span class="booking-time">${train.departureTime} - ${train.arrivalTime}</span>
+                      <span class="booking-class">${train.trainClass} · ${train.passengers} passengers</span>
+                    </div>
+                  </div>
+                  <div class="booking-actions">
+                    <div class="booking-price">₹${train.totalPrice}</div>
+                    <button class="delete-btn" onclick="deleteBooking('trains', '${train.bookingId}')">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 6h18"></path>
+                        <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"></path>
+                        <line x1="10" y1="11" x2="10" y2="17"></line>
+                        <line x1="14" y1="11" x2="14" y2="17"></line>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          `;
+        }
+        
+        tripCard.innerHTML = `
+          <div class="trip-header">
+            <div class="trip-title-section">
+              <h3 class="trip-title">${trip.origin} to ${trip.destination}</h3>
+              <p class="trip-date">${formattedDate}</p>
+            </div>
+            <div class="trip-total">
+              <span class="total-label">Total</span>
+              <span class="total-price">₹${trip.totalPrice}</span>
+            </div>
+          </div>
+          <div class="trip-content">
+            ${flightItems}
+            ${hotelItems}
+            ${trainItems}
+          </div>
+        `;
+        
+        tripsContainer.appendChild(tripCard);
+      });
+    }
+    
+    function deleteBooking(type, bookingId) {
+      if (confirm('Are you sure you want to delete this booking?')) {
+        if (UserTrips.deleteTrip(type, bookingId)) {
+          location.reload();
+        } else {
+          alert('Failed to delete the booking. Please try again.');
+        }
+      }
+    }
+    
+    function formatDate(dateString) {
+      const options = { year: 'numeric', month: 'short', day: 'numeric' };
+      return new Date(dateString).toLocaleDateString('en-US', options);
+    }
+    
+    window.onload = function() {
+      const banner = document.querySelector('.banner');
+      banner.style.backgroundImage = 'url("https://images.unsplash.com/photo-1488646953014-85cb44e25828?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1920")';
+      banner.style.backgroundSize = 'cover';
+      banner.style.backgroundPosition = 'center';
+    };
+  </script>
+
+  <!-- Add debug panel for development -->
+  <div id="debug-panel" style="position: fixed; bottom: 10px; right: 10px; background: rgba(0,0,0,0.8); color: #0f0; padding: 10px; border-radius: 5px; font-family: monospace; font-size: 12px; z-index: 9999; display: none;">
+    <div id="debug-content"></div>
+    <button onclick="document.getElementById('debug-panel').style.display='none'">Close</button>
+    <button onclick="UserTrips.migrateBookings()">Migrate Data</button>
+  </div>
+
+  <script>
+    document.addEventListener('keydown', function(e) {
+      if (e.ctrlKey && e.shiftKey && e.key === 'D') {
+        const panel = document.getElementById('debug-panel');
+        panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+        
+        if (panel.style.display === 'block') {
+          const content = document.getElementById('debug-content');
+          const userId = UserTrips.getCurrentUserId();
+          const username = UserTrips.getCurrentUsername();
+          
+          content.innerHTML = `
+            <p>User ID: ${userId || 'Not logged in'}</p>
+            <p>Username: ${username || 'Not logged in'}</p>
+            <p>Flights: ${UserTrips.getTrips('flights').length}</p>
+            <p>Hotels: ${UserTrips.getTrips('hotels').length}</p>
+            <p>Trains: ${UserTrips.getTrips('trains').length}</p>
+          `;
+        }
+      }
+    });
+  </script>
+
+  <style>
+    /* Back to Home Button */
+    .back-home-btn {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.9);
+      color: var(--primary);
+      padding: 10px 18px;
+      border-radius: var(--radius-full);
+      box-shadow: var(--shadow-md);
+      z-index: var(--z-top);
+      transition: all var(--transition-normal);
+      font-weight: 500;
+      font-size: 15px;
+    }
+    
+    .back-home-btn:hover {
+      background: var(--primary);
+      color: white;
+      transform: translateX(-5px);
+      box-shadow: var(--shadow-lg);
+    }
+    
+    .back-home-btn svg {
+      width: 16px;
+      height: 16px;
+    }
+    
+    /* Trip Overview Cards */
+    .overview-cards {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      margin-top: 15px;
+    }
+    
+    .overview-card {
+      background: white;
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      box-shadow: var(--shadow-md);
+      flex: 1;
+      min-width: 200px;
+      transition: all var(--transition-normal);
+    }
+    
+    .overview-card:hover {
+      transform: translateY(-5px);
+      box-shadow: var(--shadow-lg);
+    }
+    
+    .overview-icon {
+      width: 50px;
+      height: 50px;
+      border-radius: var(--radius-md);
+      background: linear-gradient(45deg, var(--primary-light), var(--primary));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+    
+    .overview-icon svg {
+      width: 24px;
+      height: 24px;
+    }
+    
+    .overview-details h3 {
+      margin: 0;
+      font-size: 1.5rem;
+      color: var(--text-dark);
+    }
+    
+    .overview-details p {
+      margin: 5px 0 0;
+      color: var(--text-medium);
+      font-size: 0.9rem;
+    }
+    
+    /* Trip Cards */
+    .trip-card {
+      background: white;
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      margin-bottom: 30px;
+      box-shadow: var(--shadow-md);
+      transition: all var(--transition-normal);
+    }
+    
+    .trip-card:hover {
+      transform: translateY(-5px);
+      box-shadow: var(--shadow-lg);
+    }
+    
+    .trip-header {
+      padding: 20px;
+      background: linear-gradient(to right, var(--primary-light), var(--primary));
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .trip-title {
+      margin: 0;
+      font-size: 1.4rem;
+    }
+    
+    .trip-date {
+      margin: 5px 0 0;
+      font-size: 0.9rem;
+      opacity: 0.9;
+    }
+    
+    .trip-total {
+      text-align: right;
+    }
+    
+    .total-label {
+      display: block;
+      font-size: 0.9rem;
+      opacity: 0.9;
+    }
+    
+    .total-price {
+      font-size: 1.5rem;
+      font-weight: 600;
+    }
+    
+    .trip-content {
+      padding: 20px;
+    }
+    
+    .trip-section {
+      margin-bottom: 25px;
+    }
+    
+    .trip-section:last-child {
+      margin-bottom: 0;
+    }
+    
+    .trip-section h4 {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--text-dark);
+      font-size: 1.1rem;
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(0,0,0,0.1);
+    }
+    
+    .trip-section h4 svg {
+      width: 18px;
+      height: 18px;
+      color: var(--primary);
+    }
+    
+    .booking-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 15px;
+      border-radius: var(--radius-md);
+      background: var(--off-white);
+      margin-bottom: 10px;
+    }
+    
+    .booking-item:last-child {
+      margin-bottom: 0;
+    }
+    
+    .booking-title {
+      font-weight: 600;
+      color: var(--text-dark);
+      display: block;
+      margin-bottom: 5px;
+    }
+    
+    .booking-route, .booking-location {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-medium);
+      font-size: 0.95rem;
+      margin-bottom: 8px;
+    }
+    
+    .booking-route svg {
+      width: 14px;
+      height: 14px;
+      color: var(--text-light);
+    }
+    
+    .booking-meta {
+      font-size: 0.85rem;
+      color: var(--text-light);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    
+    .booking-price {
+      font-weight: 600;
+      color: var(--primary);
+      align-self: center;
+    }
+    
+    .booking-actions {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+    
+    .delete-btn {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      color: var(--text-light);
+      padding: 5px;
+      border-radius: 50%;
+      transition: all 0.2s;
+    }
+    
+    .delete-btn:hover {
+      color: #e74c3c;
+      background: rgba(231, 76, 60, 0.1);
+    }
+    
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      background: white;
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-md);
+    }
+    
+    .empty-state img {
+      width: 150px;
+      height: 150px;
+      object-fit: cover;
+      border-radius: 50%;
+      margin-bottom: 30px;
+      border: 5px solid var(--off-white);
+    }
+    
+    .empty-state h3 {
+      font-size: 1.5rem;
+      margin-bottom: 10px;
+      color: var(--text-dark);
+    }
+    
+    .empty-state p {
+      color: var(--text-medium);
+      max-width: 400px;
+      margin: 0 auto 30px;
+    }
+    
+    .empty-actions {
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    
+    .action-btn {
+      background: linear-gradient(45deg, var(--primary-dark), var(--primary));
+      color: white;
+      padding: 10px 20px;
+      border-radius: var(--radius-md);
+      font-weight: 500;
+      transition: all var(--transition-normal);
+    }
+    
+    .action-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-md);
+    }
+    
+    /* Styles for the image carousel */
+    .destination-carousel {
+      padding: 2rem 0;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(5px);
+      margin: 1rem 0;
+      overflow: hidden;
+    }
+    
+    .destination-carousel h2 {
+      text-align: center;
+      margin-bottom: 1.5rem;
+      color: var(--text-dark);
+      font-family: 'Montserrat', sans-serif;
+    }
+    
+    .image-slider-container {
+      width: 100%;
+      overflow: hidden;
+      position: relative;
+    }
+    
+    .image-slider {
+      display: flex;
+      overflow-x: auto;
+      scroll-behavior: smooth;
+      scrollbar-width: none; /* Firefox */
+      -ms-overflow-style: none; /* IE/Edge */
+      gap: 1rem;
+      padding: 1rem;
+    }
+    
+    .image-slider::-webkit-scrollbar {
+      display: none; /* Chrome/Safari/Opera */
+    }
+    
+    .slider-item {
+      flex: 0 0 auto;
+      width: 320px;
+      height: 200px;
+      position: relative;
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow: var(--shadow-md);
+      transition: transform 0.3s ease;
+    }
+    
+    .slider-item:hover {
+      transform: translateY(-5px);
+    }
+    
+    .slider-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.5s ease;
+    }
+    
+    .slider-item:hover img {
+      transform: scale(1.05);
+    }
+    
+    .slider-caption {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 0.8rem;
+      background: linear-gradient(to top, rgba(0,0,0,0.7), rgba(0,0,0,0));
+      color: white;
+      font-weight: 500;
+    }
+    
+    .image-slider.active {
+      cursor: grabbing;
+    }
+    
+    /* Responsive Styles */
+    @media (max-width: 768px) {
+      .overview-cards {
+        flex-direction: column;
+      }
+      
+      .trip-header {
+        flex-direction: column;
+        gap: 15px;
+        align-items: flex-start;
+      }
+      
+      .trip-total {
+        text-align: left;
+      }
+      
+      .booking-item {
+        flex-direction: column;
+        gap: 10px;
+      }
+      
+      .booking-price {
+        align-self: flex-start;
+      }
+    }
+  </style>
+</body>
+</html>
