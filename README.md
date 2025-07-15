@@ -165,8 +165,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## 📞 Contact
 
-For any questions or suggestions, please reach out to the development team.
+93277 86597
 
 ---
 
-**Note**: This is a learning project and should not be used in production without proper security implementations and testing.
